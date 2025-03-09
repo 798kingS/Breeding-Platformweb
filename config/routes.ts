@@ -46,16 +46,22 @@ export default [
     ],
   },
   {
-    name: '品种管理',
+    name: '种质资源库',
     icon: 'table',
     path: '/list',
     component: './TableList',
   },
   {
     name: '留种记录',
-    icon: 'database',
+    icon: 'file',
     path: '/saved-seeds',
     component: './SavedSeeds',
+  },
+  {
+    name: '播种记录',
+    icon: 'calendar',
+    path: '/sowing-records',
+    component: './SowingRecords',
   },
   {
     path: '/',

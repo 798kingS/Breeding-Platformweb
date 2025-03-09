@@ -1,4 +1,4 @@
-import { removeRule, rule, updateRule, saveSeed, importExcel } from '@/services/ant-design-pro/api';
+import { removeRule, rule, updateRule, importExcel } from '@/services/ant-design-pro/api';
 import { mockData } from '@/services/ant-design-pro/api';
 import { PlusOutlined, ImportOutlined, UploadOutlined, ExportOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns, ProDescriptionsItemProps } from '@ant-design/pro-components';
@@ -14,7 +14,7 @@ import {
   ProTable,
 } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import { Button, Drawer, message, Upload, Modal, Table, Space } from 'antd';
+import { Button, Drawer, message, Upload, Modal, Table, Space, Divider } from 'antd';
 import React, { useRef, useState } from 'react';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
@@ -68,13 +68,13 @@ const handleUpdate = async (fields: FormValueType) => {
     hide();
 
     // 显示配置成功的提示
-    message.success('Configuration is successful');
+    message.success('成功配置');
     return true;
   } catch (error) {
     // 隐藏加载中提示
     hide();
     // 显示配置失败的提示
-    message.error('Configuration failed, please try again!');
+    message.error('配置失败，请重试！');
     return false;
   }
 };
@@ -93,76 +93,11 @@ const handleRemove = async (selectedRows: API.RuleListItem[]) => {
       key: selectedRows.map((row) => row.key),
     });
     hide();
-    message.success('Deleted successfully and will refresh soon');
+    message.success('删除成功');
     return true;
   } catch (error) {
     hide();
-    message.error('Delete failed, please try again');
-    return false;
-  }
-};
-
-/**
- * 处理留种操作
- * @param record 当前行数据
- */
-const handleSaveSeed = async (record: API.RuleListItem) => {
-  const hide = message.loading('正在保存到留种页面');
-  try {
-    if (!record.varietyName || !record.type || !record.seedNumber || 
-        !record.photo || !record.source || !record.plantingYear) {
-      message.error('缺少必要的种子信息');
-      return false;
-    }
-    
-    await saveSeed({
-      varietyName: record.varietyName,
-      type: record.type,
-      seedNumber: record.seedNumber,
-      photo: record.photo,
-      source: record.source,
-      plantingYear: record.plantingYear,
-    });
-    hide();
-    message.success('已成功保存到留种页面');
-    return true;
-  } catch (error) {
-    hide();
-    message.error('保存失败，请重试！');
-    return false;
-  }
-};
-
-/**
- * 批量留种操作
- * @param selectedRows 选中的行数据
- */
-const handleBatchSave = async (selectedRows: API.RuleListItem[]) => {
-  const hide = message.loading('正在批量保存到留种页面');
-  if (!selectedRows) return true;
-  try {
-    for (const record of selectedRows) {
-      if (!record.varietyName || !record.type || !record.seedNumber || 
-          !record.photo || !record.source || !record.plantingYear) {
-        message.error(`品种"${record.varietyName || '未知'}"缺少必要的种子信息`);
-        continue;
-      }
-      
-      await saveSeed({
-        varietyName: record.varietyName,
-        type: record.type,
-        seedNumber: record.seedNumber,
-        photo: record.photo,
-        source: record.source,
-        plantingYear: record.plantingYear,
-      });
-    }
-    hide();
-    message.success('批量保存成功');
-    return true;
-  } catch (error) {
-    hide();
-    message.error('批量保存失败，请重试');
+    message.error('删除失败，请重试');
     return false;
   }
 };
@@ -198,6 +133,12 @@ const TableList: React.FC = () => {
   const [currentVariety, setCurrentVariety] = useState<API.RuleListItem>();
   const [hybridizationList, setHybridizationList] = useState<any[]>([]);
 
+  const [sowingModalOpen, setSowingModalOpen] = useState<boolean>(false);
+  const [sowingList, setSowingList] = useState<any[]>([]);
+  const [currentSowingRecord, setCurrentSowingRecord] = useState<API.RuleListItem>();
+
+  const [savedSeedList, setSavedSeedList] = useState<API.RuleListItem[]>([]);
+
   const handleShowHybridization = (record: API.RuleListItem) => {
     setCurrentVariety(record);
     setHybridModalOpen(true);
@@ -206,16 +147,90 @@ const TableList: React.FC = () => {
   const handleCreateHybridization = (targetVariety: API.RuleListItem) => {
     if (!currentVariety || !targetVariety) return;
     
+    // 更新当前品种的杂交信息
+    const currentIndex = mockData.findIndex(item => item.key === currentVariety.key);
+    if (currentIndex !== -1) {
+      const updatedVariety = {
+        ...mockData[currentIndex],
+        parentMale: targetVariety.varietyName,
+        parentFemale: currentVariety.varietyName,
+        hybridization: `${targetVariety.varietyName}*${currentVariety.varietyName}`
+      };
+      mockData[currentIndex] = updatedVariety;
+    }
+    
     const newHybrid = {
       id: `${currentVariety.seedNumber}X${targetVariety.seedNumber}`,
       femaleNumber: currentVariety.seedNumber,
       maleNumber: targetVariety.seedNumber,
       femaleName: currentVariety.varietyName,
       maleName: targetVariety.varietyName,
+      hybridization: `${targetVariety.varietyName}*${currentVariety.varietyName}`
     };
     
     setHybridizationList([...hybridizationList, newHybrid]);
     message.success('已添加到杂交配组表');
+    
+    // 刷新表格数据
+    if (actionRef.current) {
+      actionRef.current.reload();
+    }
+  };
+
+  const handleSowing = (record: API.RuleListItem) => {
+    setCurrentSowingRecord(record);
+    setSowingModalOpen(true);
+  };
+
+  const handleSowingSubmit = async (values: any) => {
+    const newSowingRecord = {
+      seedNumber: currentSowingRecord?.seedNumber || '',
+      code: values.code,
+      varietyName: currentSowingRecord?.varietyName || '',
+      sowingCount: values.sowingCount,
+      planNumber: values.planNumber,
+      note: values.note,
+    };
+
+    // 保存到本地状态
+    setSowingList([...sowingList, newSowingRecord]);
+
+    // 保存到localStorage
+    const existingRecords = localStorage.getItem('sowingRecords');
+    const records = existingRecords ? JSON.parse(existingRecords) : [];
+    records.push(newSowingRecord);
+    localStorage.setItem('sowingRecords', JSON.stringify(records));
+
+    message.success('已添加到播种表');
+    setSowingModalOpen(false);
+  };
+
+  const handleGenerateReport = () => {
+    if (sowingList.length === 0) {
+      message.warning('暂无播种记录');
+      return;
+    }
+
+    // 创建CSV内容
+    const headers = ['种植编号', '编号', '品种名称', '播种数（自主编制）', '计划', '备注'];
+    const csvContent = [
+      headers.join(','),
+      ...sowingList.map(item => 
+        [item.code, item.seedNumber, item.varietyName, item.sowingCount, item.planNumber, item.note].join(',')
+      )
+    ].join('\n');
+
+    // 创建并下载文件
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', '考种记载表.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const columns: ProColumns<API.RuleListItem>[] = [
@@ -379,11 +394,11 @@ const TableList: React.FC = () => {
     },
     {
       title: '杂交情况',
-      dataIndex: 'hybridizationStatus',
+      dataIndex: 'hybridization',
       valueType: 'text',
       render: (_, record) => {
-        if (record.parentMale && record.parentFemale) {
-          return `${record.parentFemale}*${record.parentMale}`;
+        if (record.hybridization) {
+          return record.hybridization;
         }
         return (
           <Button
@@ -399,8 +414,17 @@ const TableList: React.FC = () => {
       title: '操作',
       dataIndex: 'option',
       valueType: 'option',
-      width: 120,
+      width: 200,
       render: (_, record) => [
+        <Button
+          key="sowing"
+          type="primary"
+          onClick={() => {
+            handleSowing(record);
+          }}
+        >
+          播种
+        </Button>,
         <Button
           key="save"
           type="primary"
@@ -469,6 +493,202 @@ const TableList: React.FC = () => {
       return false;
     },
     fileList,
+  };
+
+  const handleExportSavedSeeds = (records: API.RuleListItem[]) => {
+    if (records.length === 0) {
+      message.warning('暂无留种记录');
+      return;
+    }
+
+    // 创建CSV内容
+    const headers = [
+      '品种名称',
+      '类型',
+      '留种编号',
+      '引种年份',
+      '来源',
+      '常规种/纯化',
+      '种植年份',
+      '抗性',
+      '结果特征',
+      '开花期/果实发育期',
+      '留果个数',
+      '产量',
+      '果型',
+      '皮色',
+      '肉色',
+      '单果重(g)',
+      '肉厚(mm)',
+      '糖度(°Brix)',
+      '质地',
+      '总体口感',
+      '配合力'
+    ];
+
+    const csvContent = [
+      headers.join(','),
+      ...records.map(item => [
+        item.varietyName || '',
+        item.type || '',
+        item.seedNumber || '',
+        item.introductionYear || '',
+        item.source || '',
+        item.breedingType || '',
+        item.plantingYear || '',
+        item.resistance || '',
+        item.fruitCharacteristics || '',
+        item.floweringPeriod || '',
+        item.fruitCount || '',
+        item.yield || '',
+        item.fruitShape || '',
+        item.skinColor || '',
+        item.fleshColor || '',
+        item.singleFruitWeight || '',
+        item.fleshThickness || '',
+        item.sugarContent || '',
+        item.texture || '',
+        item.overallTaste || '',
+        item.combiningAbility || ''
+      ].join(','))
+    ].join('\n');
+
+    // 创建并下载文件
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', '留种记录.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  /**
+   * 处理留种操作
+   * @param record 当前行数据
+   */
+  const handleSaveSeed = async (record: API.RuleListItem) => {
+    const hide = message.loading('正在保存到留种页面');
+    try {
+      if (!record.varietyName || !record.type || !record.seedNumber || 
+          !record.photo || !record.source || !record.plantingYear) {
+        message.error('缺少必要的种子信息');
+        return false;
+      }
+      
+      // 保存到本地状态
+      setSavedSeedList([...savedSeedList, record]);
+
+      // 保存到localStorage
+      const existingRecords = localStorage.getItem('savedSeeds');
+      const records = existingRecords ? JSON.parse(existingRecords) : [];
+      records.push(record);
+      localStorage.setItem('savedSeeds', JSON.stringify(records));
+      
+      hide();
+      message.success('已成功保存到留种页面');
+
+      // 显示导出确认对话框
+      Modal.confirm({
+        title: '导出留种记录',
+        content: '是否要导出留种记录为Excel文件？',
+        okText: '导出',
+        cancelText: '取消',
+        onOk: () => handleExportSavedSeeds([record]),
+      });
+
+      return true;
+    } catch (error) {
+      hide();
+      message.error('保存失败，请重试！');
+      return false;
+    }
+  };
+
+  /**
+   * 批量留种操作
+   * @param selectedRows 选中的行数据
+   */
+  const handleBatchSave = async (selectedRows: API.RuleListItem[]) => {
+    const hide = message.loading('正在批量保存到留种页面');
+    if (!selectedRows) return true;
+    try {
+      const validRecords: API.RuleListItem[] = [];
+      
+      for (const record of selectedRows) {
+        if (!record.varietyName || !record.type || !record.seedNumber || 
+            !record.photo || !record.source || !record.plantingYear) {
+          message.error(`品种"${record.varietyName || '未知'}"缺少必要的种子信息`);
+          continue;
+        }
+        validRecords.push(record);
+      }
+
+      if (validRecords.length > 0) {
+        // 保存到本地状态
+        setSavedSeedList([...savedSeedList, ...validRecords]);
+
+        // 保存到localStorage
+        const existingRecords = localStorage.getItem('savedSeeds');
+        const records = existingRecords ? JSON.parse(existingRecords) : [];
+        records.push(...validRecords);
+        localStorage.setItem('savedSeeds', JSON.stringify(records));
+
+        hide();
+        message.success('批量保存成功');
+
+        // 显示导出确认对话框
+        Modal.confirm({
+          title: '导出留种记录',
+          content: '是否要导出留种记录为Excel文件？',
+          okText: '导出',
+          cancelText: '取消',
+          onOk: () => handleExportSavedSeeds(validRecords),
+        });
+      }
+      return true;
+    } catch (error) {
+      hide();
+      message.error('批量保存失败，请重试');
+      return false;
+    }
+  };
+
+  /**
+   * 批量播种操作
+   * @param selectedRows 选中的行数据
+   */
+  const handleBatchSowing = async (selectedRows: API.RuleListItem[]) => {
+    const hide = message.loading('正在批量添加到播种表');
+    if (!selectedRows) return true;
+    try {
+      for (const record of selectedRows) {
+        const newSowingRecord = {
+          seedNumber: record.seedNumber,
+          code: `TZ-${record.key || 1}`,
+          varietyName: record.varietyName,
+          sowingCount: 0,
+          planNumber: '',
+          note: '',
+        };
+
+        // 保存到localStorage
+        const existingRecords = localStorage.getItem('sowingRecords');
+        const records = existingRecords ? JSON.parse(existingRecords) : [];
+        records.push(newSowingRecord);
+        localStorage.setItem('sowingRecords', JSON.stringify(records));
+      }
+      hide();
+      message.success('已批量添加到播种表');
+      return true;
+    } catch (error) {
+      hide();
+      message.error('批量添加失败，请重试');
+      return false;
+    }
   };
 
   const handleExportHybridization = () => {
@@ -574,6 +794,16 @@ const TableList: React.FC = () => {
             }}
           >
             批量留种
+          </Button>
+          <Button
+            type="primary"
+            onClick={async () => {
+              await handleBatchSowing(selectedRowsState);
+              setSelectedRows([]);
+              actionRef.current?.reloadAndRest?.();
+            }}
+          >
+            批量播种
           </Button>
         </FooterToolbar>
       )}
@@ -927,6 +1157,114 @@ const TableList: React.FC = () => {
             rowKey="id"
           />
         </Space>
+      </Modal>
+
+      <Modal
+        title="种质资源播种表"
+        open={sowingModalOpen}
+        onCancel={() => setSowingModalOpen(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setSowingModalOpen(false)}>
+            取消
+          </Button>,
+          <Button 
+            key="generate" 
+            type="primary"
+            onClick={handleGenerateReport}
+          >
+            生成考种记载表
+          </Button>
+        ]}
+      >
+        <ModalForm
+          title={false}
+          submitter={{
+            searchConfig: {
+              submitText: '添加到播种表',
+            },
+          }}
+          onFinish={handleSowingSubmit}
+          initialValues={{
+            seedNumber: currentSowingRecord?.seedNumber || '',
+            varietyName: currentSowingRecord?.varietyName || '',
+            code: `TZ-${currentSowingRecord?.key || 1}`,
+          }}
+        >
+          <ProFormText
+            label="种植编号"
+            name="code"
+            rules={[{ required: true, message: '请输入种植编号' }]}
+            initialValue={`TZ-${currentSowingRecord?.key || 1}`}
+          />
+          <ProFormText
+            label="编号"
+            name="seedNumber"
+            disabled
+            initialValue={currentSowingRecord?.seedNumber}
+          />
+          <ProFormText
+            label="品种名称"
+            name="varietyName"
+            disabled
+            initialValue={currentSowingRecord?.varietyName}
+          />
+          <ProFormDigit
+            label="播种数"
+            name="sowingCount"
+            rules={[{ required: true, message: '请输入播种数' }]}
+            min={1}
+            fieldProps={{
+              precision: 0,
+              step: 1,
+            }}
+          />
+          <ProFormText
+            label="计划"
+            name="planNumber"
+            rules={[{ required: true, message: '请输入计划编号' }]}
+            placeholder="请输入计划编号"
+          />
+          <ProFormText
+            label="备注"
+            name="note"
+            placeholder="请输入备注信息"
+          />
+        </ModalForm>
+
+        <Divider />
+
+        <Table
+          columns={[
+            {
+              title: '种植编号',
+              dataIndex: 'code',
+            },
+            {
+              title: '编号',
+              dataIndex: 'seedNumber',
+            },
+            {
+              title: '品种名称',
+              dataIndex: 'varietyName',
+            },
+            {
+              title: '播种数',
+              dataIndex: 'sowingCount',
+            },
+            {
+              title: '计划',
+              dataIndex: 'planNumber',
+            },
+            {
+              title: '备注',
+              dataIndex: 'note',
+            },
+          ]}
+          dataSource={sowingList}
+          rowKey="code"
+          pagination={false}
+          scroll={{ y: 240 }}
+        />
       </Modal>
     </PageContainer>
   );
