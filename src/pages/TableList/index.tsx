@@ -1425,7 +1425,9 @@ const TableList: React.FC = () => {
       </Drawer>
 
       <Modal
-        title="导入Excel"
+        title={<div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 24px', margin: '-20px -24px 20px' }}>
+          <span style={{ fontSize: '18px', fontWeight: 500 }}>导入Excel</span>
+        </div>}
         open={importModalOpen}
         onOk={handleImport}
         onCancel={() => {
@@ -1433,31 +1435,41 @@ const TableList: React.FC = () => {
           setFileList([]);
         }}
         confirmLoading={uploading}
+        width={600}
+        bodyStyle={{ padding: '24px' }}
       >
-        <Upload {...uploadProps}>
-          <Button icon={<UploadOutlined />}>选择Excel文件</Button>
-        </Upload>
-        <div style={{ marginTop: 16 }}>
-          <h4>注意事项：</h4>
-          <p>1. 请使用标准Excel模板进行导入</p>
-          <p>2. Excel文件大小不能超过10MB</p>
-          <p>3. 表格中的必填字段不能为空</p>
-          <p>4. 日期格式请使用YYYY-MM-DD格式</p>
+        <div style={{ background: '#fafafa', padding: '24px', borderRadius: '8px', marginBottom: '24px' }}>
+          <Upload {...uploadProps}>
+            <Button icon={<UploadOutlined />} size="large">选择Excel文件</Button>
+          </Upload>
+        </div>
+        
+        <div style={{ background: '#f6ffed', padding: '16px', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
+          <h4 style={{ color: '#52c41a', marginTop: 0 }}>注意事项：</h4>
+          <ul style={{ color: '#666', marginBottom: 0 }}>
+            <li>请使用标准Excel模板进行导入</li>
+            <li>Excel文件大小不能超过10MB</li>
+            <li>表格中的必填字段不能为空</li>
+            <li>日期格式请使用YYYY-MM-DD格式</li>
+          </ul>
         </div>
       </Modal>
 
       <Modal
-        title="选择杂交品种"
+        title={<div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 24px', margin: '-20px -24px 20px' }}>
+          <span style={{ fontSize: '18px', fontWeight: 500 }}>选择杂交品种</span>
+        </div>}
         open={hybridModalOpen}
         onCancel={() => setHybridModalOpen(false)}
-        width={1000}
+        width={1200}
+        bodyStyle={{ padding: '24px', maxHeight: '80vh', overflow: 'auto' }}
         footer={[
           <Button key="cancel" onClick={() => setHybridModalOpen(false)}>
             关闭
           </Button>,
           <Button 
             key="export" 
-            type="primary" 
+            type="primary"
             icon={<ExportOutlined />}
             onClick={handleExportHybridization}
           >
@@ -1465,85 +1477,100 @@ const TableList: React.FC = () => {
           </Button>
         ]}
       >
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <h3>当前品种：{currentVariety?.varietyName}</h3>
-          <Table
-            columns={[
-              {
-                title: '品种名称',
-                dataIndex: 'varietyName',
-              },
-              {
-                title: '留种编号',
-                dataIndex: 'seedNumber',
-              },
-              {
-                title: '类型',
-                dataIndex: 'type',
-              },
-              {
-                title: '杂交情况',
-                dataIndex: 'hybridization',
-              },
-              {
-                title: '操作',
-                render: (_, record) => (
-                  <Button
-                    type="primary"
-                    onClick={() => handleCreateHybridization(record)}
-                    disabled={record.key === currentVariety?.key}
-                  >
-                    选择作为配组
-                  </Button>
-                ),
-              },
-            ]}
-            dataSource={mockData.filter(item => 
-              item.key !== currentVariety?.key && 
-              item.type === currentVariety?.type
-            )}
-            rowKey="key"
-          />
-          <h3>杂交配组表</h3>
-          <Table
-            columns={[
-              {
-                title: '编号',
-                dataIndex: 'id',
-              },
-              {
-                title: '母本编号',
-                dataIndex: 'femaleNumber',
-              },
-              {
-                title: '父本编号',
-                dataIndex: 'maleNumber',
-              },
-              {
-                title: '母本名称',
-                dataIndex: 'femaleName',
-              },
-              {
-                title: '父本名称',
-                dataIndex: 'maleName',
-              },
-              {
-                title: '杂交组合',
-                dataIndex: 'hybridization',
-              },
-              {
-                title: '配组日期',
-                dataIndex: 'date',
-              }
-            ]}
-            dataSource={hybridizationList}
-            rowKey="id"
-          />
+        <Space direction="vertical" style={{ width: '100%' }} size="large">
+          <div style={{ background: '#f6ffed', padding: '16px', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
+            <h3 style={{ margin: '0', color: '#52c41a' }}>当前品种：{currentVariety?.varietyName}</h3>
+          </div>
+          
+          <div style={{ background: '#fff', borderRadius: '8px', padding: '16px' }}>
+            <h3 style={{ margin: '0 0 16px', color: '#1890ff' }}>可选杂交品种</h3>
+            <Table
+              columns={[
+                {
+                  title: '品种名称',
+                  dataIndex: 'varietyName',
+                },
+                {
+                  title: '留种编号',
+                  dataIndex: 'seedNumber',
+                },
+                {
+                  title: '类型',
+                  dataIndex: 'type',
+                },
+                {
+                  title: '杂交情况',
+                  dataIndex: 'hybridization',
+                },
+                {
+                  title: '操作',
+                  render: (_, record) => (
+                    <Button
+                      type="primary"
+                      onClick={() => handleCreateHybridization(record)}
+                      disabled={record.key === currentVariety?.key}
+                      size="middle"
+                    >
+                      选择作为配组
+                    </Button>
+                  ),
+                },
+              ]}
+              dataSource={mockData.filter(item => 
+                item.key !== currentVariety?.key && 
+                item.type === currentVariety?.type
+              )}
+              rowKey="key"
+              pagination={{ pageSize: 5 }}
+              style={{ marginBottom: '24px' }}
+            />
+          </div>
+
+          <div style={{ background: '#fff', borderRadius: '8px', padding: '16px' }}>
+            <h3 style={{ margin: '0 0 16px', color: '#1890ff' }}>杂交配组表</h3>
+            <Table
+              columns={[
+                {
+                  title: '编号',
+                  dataIndex: 'id',
+                },
+                {
+                  title: '母本编号',
+                  dataIndex: 'femaleNumber',
+                },
+                {
+                  title: '父本编号',
+                  dataIndex: 'maleNumber',
+                },
+                {
+                  title: '母本名称',
+                  dataIndex: 'femaleName',
+                },
+                {
+                  title: '父本名称',
+                  dataIndex: 'maleName',
+                },
+                {
+                  title: '杂交组合',
+                  dataIndex: 'hybridization',
+                },
+                {
+                  title: '配组日期',
+                  dataIndex: 'date',
+                }
+              ]}
+              dataSource={hybridizationList}
+              rowKey="id"
+              pagination={{ pageSize: 5 }}
+            />
+          </div>
         </Space>
       </Modal>
 
       <Modal
-        title="种质资源播种表"
+        title={<div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 24px', margin: '-20px -24px 20px' }}>
+          <span style={{ fontSize: '18px', fontWeight: 500 }}>种质资源播种表</span>
+        </div>}
         open={sowingModalOpen}
         onCancel={() => setSowingModalOpen(false)}
         footer={[
@@ -1553,97 +1580,123 @@ const TableList: React.FC = () => {
           <Button 
             key="generate" 
             type="primary"
+            icon={<ExportOutlined />}
             onClick={handleGenerateReport}
           >
             生成考种记载表
           </Button>
         ]}
-        width={800}
+        width={900}
+        bodyStyle={{ padding: '24px', maxHeight: '80vh', overflow: 'auto' }}
       >
-        <ModalForm
-          title={false}
-          submitter={{
-            searchConfig: {
-              submitText: '添加到播种表',
-            },
-          }}
-          onFinish={handleSowingSubmit}
-          initialValues={{
-            code: `TZ-${currentSowingRecord?.key || 1}`,
-            seedNumber: currentSowingRecord?.seedNumber || '',
-            varietyName: currentSowingRecord?.varietyName || '',
-            sowingCount: 0,
-            planNumber: '',
-          }}
-        >
-          <ProFormText
-            label="种植编号"
-            name="code"
-            rules={[{ required: true, message: '请输入种植编号' }]}
-            placeholder="请输入种植编号"
-          />
-          <ProFormText
-            label="编号"
-            name="seedNumber"
-            disabled
-            initialValue={currentSowingRecord?.seedNumber}
-          />
-          <ProFormText
-            label="品种名称"
-            name="varietyName"
-            disabled
-            initialValue={currentSowingRecord?.varietyName}
-          />
-          <ProFormDigit
-            label="播种数量"
-            name="sowingCount"
-            rules={[{ required: true, message: '请输入播种数量' }]}
-            min={1}
-            fieldProps={{
-              precision: 0,
-              step: 1,
-            }}
-            placeholder="请输入播种数量"
-          />
-          <ProFormText
-            label="计划编号"
-            name="planNumber"
-            rules={[{ required: true, message: '请输入计划编号' }]}
-            placeholder="请输入计划编号"
-          />
-        </ModalForm>
-
-        <Divider />
-
-        <Form form={form} component={false}>
-          <Table
-            components={{
-              body: {
-                cell: EditableCell,
+        <div style={{ background: '#fafafa', padding: '24px', borderRadius: '8px', marginBottom: '24px' }}>
+          <ModalForm
+            title={false}
+            submitter={{
+              searchConfig: {
+                submitText: '添加到播种表',
               },
+              render: (props, dom) => (
+                <div style={{ textAlign: 'right', marginTop: '24px' }}>
+                  {dom}
+                </div>
+              ),
             }}
-            bordered
-            dataSource={sowingList}
-            columns={sowingColumns.map(col => {
-              if (!col.editable) {
-                return col;
-              }
-              return {
-                ...col,
-                onCell: (record: SowingRecord) => ({
-                  record,
-                  inputType: col.inputType,
-                  dataIndex: col.dataIndex,
-                  title: col.title,
-                  editing: isEditing(record),
-                }),
-              };
-            })}
-            rowKey="id"
-            pagination={false}
-            scroll={{ y: 240 }}
-          />
-        </Form>
+            onFinish={handleSowingSubmit}
+            initialValues={{
+              code: `TZ-${currentSowingRecord?.key || 1}`,
+              seedNumber: currentSowingRecord?.seedNumber || '',
+              varietyName: currentSowingRecord?.varietyName || '',
+              sowingCount: 0,
+              planNumber: '',
+            }}
+          >
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <ProFormText
+                label="种植编号"
+                name="code"
+                rules={[{ required: true, message: '请输入种植编号' }]}
+                placeholder="请输入种植编号"
+                fieldProps={{
+                  size: 'large',
+                }}
+              />
+              <ProFormText
+                label="编号"
+                name="seedNumber"
+                disabled
+                initialValue={currentSowingRecord?.seedNumber}
+                fieldProps={{
+                  size: 'large',
+                }}
+              />
+              <ProFormText
+                label="品种名称"
+                name="varietyName"
+                disabled
+                initialValue={currentSowingRecord?.varietyName}
+                fieldProps={{
+                  size: 'large',
+                }}
+              />
+              <ProFormDigit
+                label="播种数量"
+                name="sowingCount"
+                rules={[{ required: true, message: '请输入播种数量' }]}
+                min={1}
+                fieldProps={{
+                  precision: 0,
+                  step: 1,
+                  size: 'large',
+                }}
+                placeholder="请输入播种数量"
+              />
+              <ProFormText
+                label="计划编号"
+                name="planNumber"
+                rules={[{ required: true, message: '请输入计划编号' }]}
+                placeholder="请输入计划编号"
+                fieldProps={{
+                  size: 'large',
+                }}
+              />
+            </div>
+          </ModalForm>
+        </div>
+
+        <div style={{ background: '#fff', borderRadius: '8px', padding: '16px' }}>
+          <h3 style={{ margin: '0 0 16px', color: '#1890ff' }}>播种记录列表</h3>
+          <Form form={form} component={false}>
+            <Table
+              components={{
+                body: {
+                  cell: EditableCell,
+                },
+              }}
+              bordered
+              dataSource={sowingList}
+              columns={sowingColumns.map(col => {
+                if (!col.editable) {
+                  return col;
+                }
+                return {
+                  ...col,
+                  onCell: (record: SowingRecord) => ({
+                    record,
+                    inputType: col.inputType,
+                    dataIndex: col.dataIndex,
+                    title: col.title,
+                    editing: isEditing(record),
+                  }),
+                };
+              })}
+              rowKey="id"
+              pagination={false}
+              scroll={{ y: 300 }}
+              style={{ marginBottom: '24px' }}
+            />
+          </Form>
+        </div>
       </Modal>
     </PageContainer>
   );

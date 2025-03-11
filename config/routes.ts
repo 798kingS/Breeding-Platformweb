@@ -25,7 +25,7 @@ export default [
   {
     path: '/welcome',
     name: 'welcome',
-    icon: 'smile',
+    icon: 'home',
     component: './Welcome',
   },
   {
@@ -46,22 +46,29 @@ export default [
     ],
   },
   {
-    name: '种质资源库',
-    icon: 'table',
-    path: '/list',
-    component: './TableList',
-  },
-  {
-    name: '留种记录',
-    icon: 'file',
-    path: '/saved-seeds',
-    component: './SavedSeeds',
-  },
-  {
-    name: '考种记载表',
-    icon: 'file',
-    path: '/sowing-records',
-    component: './SowingRecords',
+    name: '种质资源管理',
+    icon: 'database',
+    path: '/germplasm',
+    routes: [
+      {
+        name: '种质资源库',
+        icon: 'experiment',
+        path: '/germplasm/list',
+        component: './TableList',
+      },
+      {
+        name: '留种记录',
+        icon: 'seedling',
+        path: '/germplasm/saved-seeds',
+        component: './SavedSeeds',
+      },
+      {
+        name: '考种记载表',
+        icon: 'fileSearch',
+        path: '/germplasm/sowing-records',
+        component: './SowingRecords',
+      },
+    ],
   },
   {
     path: '/',
