@@ -1,12 +1,15 @@
 import { PageContainer } from '@ant-design/pro-components';
 import { Card, Row, Col, Statistic, Typography, Space, Divider } from 'antd';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
   CartesianGrid, Tooltip, Legend, LineChart, Line, RadarChart, Radar, 
   PolarGrid, PolarAngleAxis, PolarRadiusAxis, AreaChart, Area, ScatterChart,
   Scatter, ZAxis
 } from 'recharts';
+import ReactECharts from 'echarts-for-react';
+import * as echarts from 'echarts';
+import type { EChartsOption } from 'echarts';
 
 const { Title, Paragraph } = Typography;
 
@@ -55,6 +58,20 @@ const Welcome: React.FC = () => {
     { temperature: 15, humidity: 60, yield: 70, name: '冬季' },
   ];
 
+  // 新增：种子分布数据
+  const seedDistributionData = [
+    { name: '北京', value: 25, types: '西瓜,甜瓜' },
+    { name: '山东', value: 45, types: '西瓜,甜瓜,南瓜' },
+    { name: '河南', value: 35, types: '西瓜,黄瓜' },
+    { name: '新疆', value: 55, types: '甜瓜,西瓜' },
+    { name: '海南', value: 30, types: '西瓜,南瓜' },
+    { name: '云南', value: 40, types: '南瓜,黄瓜' },
+    { name: '广东', value: 35, types: '西瓜,黄瓜' },
+    { name: '江苏', value: 42, types: '西瓜,南瓜,黄瓜' },
+    { name: '四川', value: 38, types: '南瓜,黄瓜' },
+    { name: '湖北', value: 33, types: '西瓜,甜瓜' }
+  ];
+
   // 育种主题配色
   const THEME_COLORS = ['#2E7D32', '#4CAF50', '#81C784', '#C8E6C9', '#A5D6A7'];
   const CHART_COLORS = {
@@ -80,11 +97,66 @@ const Welcome: React.FC = () => {
     textAlign: 'center' as const,
   };
 
+  // 地图配置
+  const mapOption: EChartsOption = {
+    title: {
+      text: '种子地理分布',
+      left: 'center',
+      textStyle: {
+        color: '#2E7D32'
+      }
+    },
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: any) => {
+        const data = seedDistributionData.find(item => item.name === params.name);
+        if (data) {
+          return `${params.name}<br/>品种数量：${data.value}<br/>主要品种：${data.types}`;
+        }
+        return `${params.name}`;
+      }
+    },
+    visualMap: {
+      min: 0,
+      max: 60,
+      left: 'left',
+      top: 'bottom',
+      text: ['高', '低'],
+      inRange: {
+        color: ['#E8F5E9', '#81C784', '#2E7D32']
+      },
+      calculable: true
+    },
+    series: [
+      {
+        name: '种子分布',
+        type: 'map',
+        map: 'china',
+        roam: true,
+        emphasis: {
+          label: {
+            show: true
+          }
+        },
+        data: seedDistributionData
+      }
+    ]
+  };
+
+  // 加载中国地图数据
+  useEffect(() => {
+    fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
+      .then(response => response.json())
+      .then(geoJson => {
+        echarts.registerMap('china', geoJson);
+      });
+  }, []);
+
   return (
     <PageContainer>
       <div style={headerStyle}>
         <Title level={2} style={{ color: '#fff', margin: 0, marginBottom: '16px' }}>
-          欢迎使用育种平台
+          欢迎使用Breeding Platform
         </Title>
         <Paragraph style={{ color: '#fff', fontSize: '16px', margin: 0, opacity: 0.9 }}>
           致力于为农业科研工作者提供专业的育种管理解决方案，助力中国农业发展
@@ -131,6 +203,24 @@ const Welcome: React.FC = () => {
               precision={1}
               valueStyle={{ color: '#2E7D32', fontWeight: 'bold', fontSize: '28px' }}
             />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col span={24}>
+          <Card 
+            style={cardStyle}
+            title={<span style={{ color: '#2E7D32', fontWeight: 'bold' }}>种子地理分布</span>}
+            hoverable
+          >
+            <div style={{ height: 500 }}>
+              <ReactECharts 
+                option={mapOption}
+                style={{ height: '100%' }}
+                opts={{ renderer: 'svg' }}
+              />
+            </div>
           </Card>
         </Col>
       </Row>

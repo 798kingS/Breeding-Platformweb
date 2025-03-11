@@ -1,6 +1,6 @@
 import { removeRule, rule, updateRule, importExcel } from '@/services/ant-design-pro/api';
 import { mockData } from '@/services/ant-design-pro/api';
-import { PlusOutlined, ImportOutlined, UploadOutlined, ExportOutlined } from '@ant-design/icons';
+import { PlusOutlined, ImportOutlined, UploadOutlined, ExportOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns, ProDescriptionsItemProps } from '@ant-design/pro-components';
 import {
   FooterToolbar,
@@ -1097,8 +1097,21 @@ const TableList: React.FC = () => {
         rowKey="key"
         search={{
           labelWidth: 120,
-          defaultCollapsed: true,
-          collapsed: false,
+          defaultCollapsed: false,
+          collapseRender: (collapsed, showCollapseButton) => {
+            return showCollapseButton ? (
+              <a
+                style={{ fontSize: '14px', color: '#2E7D32' }}
+                onClick={() => {
+                  if (actionRef.current?.formRef?.current) {
+                    actionRef.current.formRef.current.setCollapsed(!collapsed);
+                  }
+                }}
+              >
+                {collapsed ? '展开' : '收起'} {collapsed ? <DownOutlined /> : <UpOutlined />}
+              </a>
+            ) : null;
+          },
         }}
         toolBarRender={() => [
           <Button
