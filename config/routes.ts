@@ -24,13 +24,13 @@ export default [
   },
   {
     path: '/welcome',
-    name: '欢迎',
+    name: 'welcome',
     icon: 'smile',
     component: './Welcome',
   },
   {
     path: '/admin',
-    name: '管理页',
+    name: 'admin',
     icon: 'crown',
     access: 'canAdmin',
     routes: [
@@ -40,7 +40,7 @@ export default [
       },
       {
         path: '/admin/sub-page',
-        name: '二级管理页',
+        name: 'sub-page',
         component: './Admin',
       },
     ],
@@ -58,8 +58,8 @@ export default [
     component: './SavedSeeds',
   },
   {
-    name: '播种记录',
-    icon: 'calendar',
+    name: '考种记载表',
+    icon: 'file',
     path: '/sowing-records',
     component: './SowingRecords',
   },

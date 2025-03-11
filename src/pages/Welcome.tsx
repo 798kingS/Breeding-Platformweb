@@ -42,7 +42,7 @@ const Welcome: React.FC = () => {
     <PageContainer>
       <Card>
         <Typography>
-          <Title level={2} style={{ textAlign: 'center', color: '#1890ff' }}>欢迎使用育种平台</Title>
+          <Title level={2} style={{ textAlign: 'center', color: '#1890ff' }}>欢迎使用Breeding Platform</Title>
           <Paragraph style={{ textAlign: 'center', fontSize: '16px', color: '#666' }}>
             本平台致力于为农业科研工作者提供全面的育种管理解决方案，帮助提高育种效率，实现科学化管理。
           </Paragraph>

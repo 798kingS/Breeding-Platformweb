@@ -1,36 +1,49 @@
-import { PageContainer, ProTable } from '@ant-design/pro-components';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, message } from 'antd';
-import { useRef } from 'react';
+import { PageContainer } from '@ant-design/pro-components';
+import { Button, Table, message } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
 
 const SowingRecords: React.FC = () => {
-  const actionRef = useRef<ActionType>();
+  const [sowingList, setSowingList] = useState<any[]>([]);
 
-  // 从localStorage获取播种记录
-  const getSowingRecords = () => {
+  useEffect(() => {
+    // 从localStorage加载播种记录
     const records = localStorage.getItem('sowingRecords');
-    return records ? JSON.parse(records) : [];
-  };
+    if (records) {
+      setSowingList(JSON.parse(records));
+    }
+  }, []);
 
   const handleExport = () => {
-    const records = getSowingRecords();
-    if (records.length === 0) {
+    if (sowingList.length === 0) {
       message.warning('暂无播种记录');
       return;
     }
 
     // 创建CSV内容
-    const headers = ['种植编号', '编号', '品种名称', '播种数（自主编制）', '计划', '备注'];
+    const headers = [
+      '种植编号',
+      '编号',
+      '品种名称',
+      '播种数量',
+      '计划编号',
+      '创建时间'
+    ];
+
     const csvContent = [
       headers.join(','),
-      ...records.map((item: any) => 
-        [item.code, item.seedNumber, item.varietyName, item.sowingCount, item.planNumber, item.note].join(',')
-      )
+      ...sowingList.map(item => [
+        item.code,
+        item.seedNumber,
+        item.varietyName,
+        item.sowingCount,
+        item.planNumber,
+        item.createTime
+      ].join(','))
     ].join('\n');
 
     // 创建并下载文件
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     
@@ -42,61 +55,59 @@ const SowingRecords: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  const columns: ProColumns[] = [
+  const columns = [
     {
       title: '种植编号',
       dataIndex: 'code',
-      valueType: 'text',
     },
     {
       title: '编号',
       dataIndex: 'seedNumber',
-      valueType: 'text',
     },
     {
       title: '品种名称',
       dataIndex: 'varietyName',
-      valueType: 'text',
     },
     {
-      title: '播种数',
+      title: '播种数量',
       dataIndex: 'sowingCount',
-      valueType: 'digit',
     },
     {
-      title: '计划',
+      title: '计划编号',
       dataIndex: 'planNumber',
-      valueType: 'text',
     },
     {
-      title: '备注',
-      dataIndex: 'note',
-      valueType: 'text',
+      title: '创建时间',
+      dataIndex: 'createTime',
+      render: (text: string) => new Date(text).toLocaleString(),
     },
   ];
 
   return (
-    <PageContainer>
-      <ProTable
-        headerTitle="播种记录"
-        actionRef={actionRef}
-        rowKey="code"
-        search={false}
-        toolBarRender={() => [
+    <PageContainer
+      header={{
+        title: '考种记载表',
+        extra: [
           <Button
-            type="primary"
             key="export"
-            onClick={handleExport}
+            type="primary"
             icon={<ExportOutlined />}
+            onClick={handleExport}
           >
-            导出考种记载表
+            导出记录
           </Button>,
-        ]}
-        request={async () => ({
-          data: getSowingRecords(),
-          success: true,
-        })}
+        ],
+      }}
+    >
+      <Table
         columns={columns}
+        dataSource={sowingList}
+        rowKey="id"
+        pagination={{
+          defaultPageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
       />
     </PageContainer>
   );

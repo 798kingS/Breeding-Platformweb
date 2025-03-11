@@ -36,24 +36,12 @@ declare namespace API {
 
   type RuleListItem = {
     key: number;
-    disabled?: boolean;
-    href?: string;
-    avatar?: string;
-    name?: string;
-    owner?: string;
-    desc?: string;
-    callNo?: number;
-    status?: number;
-    updatedAt?: string;
-    createdAt?: string;
-    progress?: number;
-    index?: number;
     photo: string;
     varietyName: string;
     type: string;
     introductionYear: string;
     source: string;
-    breedingType?: string;
+    breedingType: string;
     seedNumber: string;
     plantingYear: string;
     resistance: string;
@@ -70,10 +58,9 @@ declare namespace API {
     texture: string;
     overallTaste: string;
     combiningAbility: string;
+    hybridization: string;
     parentMale?: string;
     parentFemale?: string;
-    hybridization?: string;
-    [key: string]: any;
   };
 
   type RuleList = {
