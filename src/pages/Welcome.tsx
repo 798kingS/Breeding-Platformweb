@@ -60,16 +60,98 @@ const Welcome: React.FC = () => {
 
   // 新增：种子分布数据
   const seedDistributionData = [
-    { name: '北京', value: 25, types: '西瓜,甜瓜' },
-    { name: '山东', value: 45, types: '西瓜,甜瓜,南瓜' },
-    { name: '河南', value: 35, types: '西瓜,黄瓜' },
-    { name: '新疆', value: 55, types: '甜瓜,西瓜' },
-    { name: '海南', value: 30, types: '西瓜,南瓜' },
-    { name: '云南', value: 40, types: '南瓜,黄瓜' },
-    { name: '广东', value: 35, types: '西瓜,黄瓜' },
-    { name: '江苏', value: 42, types: '西瓜,南瓜,黄瓜' },
-    { name: '四川', value: 38, types: '南瓜,黄瓜' },
-    { name: '湖北', value: 33, types: '西瓜,甜瓜' }
+    { 
+      name: '北京', 
+      value: 25, 
+      types: '西瓜,甜瓜',
+      details: {
+        '西瓜': 15,
+        '甜瓜': 10
+      }
+    },
+    { 
+      name: '山东', 
+      value: 45, 
+      types: '西瓜,甜瓜,南瓜',
+      details: {
+        '西瓜': 20,
+        '甜瓜': 15,
+        '南瓜': 10
+      }
+    },
+    { 
+      name: '河南', 
+      value: 35, 
+      types: '西瓜,黄瓜',
+      details: {
+        '西瓜': 20,
+        '黄瓜': 15
+      }
+    },
+    { 
+      name: '新疆', 
+      value: 55, 
+      types: '甜瓜,西瓜',
+      details: {
+        '甜瓜': 35,
+        '西瓜': 20
+      }
+    },
+    { 
+      name: '海南', 
+      value: 30, 
+      types: '西瓜,南瓜',
+      details: {
+        '西瓜': 18,
+        '南瓜': 12
+      }
+    },
+    { 
+      name: '云南', 
+      value: 40, 
+      types: '南瓜,黄瓜',
+      details: {
+        '南瓜': 25,
+        '黄瓜': 15
+      }
+    },
+    { 
+      name: '广东', 
+      value: 35, 
+      types: '西瓜,黄瓜',
+      details: {
+        '西瓜': 20,
+        '黄瓜': 15
+      }
+    },
+    { 
+      name: '江苏', 
+      value: 42, 
+      types: '西瓜,南瓜,黄瓜',
+      details: {
+        '西瓜': 15,
+        '南瓜': 12,
+        '黄瓜': 15
+      }
+    },
+    { 
+      name: '四川', 
+      value: 38, 
+      types: '南瓜,黄瓜',
+      details: {
+        '南瓜': 20,
+        '黄瓜': 18
+      }
+    },
+    { 
+      name: '湖北', 
+      value: 33, 
+      types: '西瓜,甜瓜',
+      details: {
+        '西瓜': 18,
+        '甜瓜': 15
+      }
+    }
   ];
 
   // 育种主题配色
@@ -111,7 +193,15 @@ const Welcome: React.FC = () => {
       formatter: (params: any) => {
         const data = seedDistributionData.find(item => item.name === params.name);
         if (data) {
-          return `${params.name}<br/>品种数量：${data.value}<br/>主要品种：${data.types}`;
+          const detailsHtml = Object.entries(data.details)
+            .map(([type, count]) => `${type}: ${count}个`)
+            .join('<br/>');
+          return `
+            <div style="font-weight: bold; margin-bottom: 5px;">${params.name}</div>
+            <div style="margin-bottom: 5px;">总数量：${data.value}个</div>
+            <div style="font-weight: bold; margin-bottom: 3px;">各类型数量：</div>
+            ${detailsHtml}
+          `;
         }
         return `${params.name}`;
       }
@@ -136,9 +226,20 @@ const Welcome: React.FC = () => {
         emphasis: {
           label: {
             show: true
+          },
+          itemStyle: {
+            areaColor: '#4CAF50'
           }
         },
-        data: seedDistributionData
+        data: seedDistributionData,
+        itemStyle: {
+          borderColor: '#fff',
+          borderWidth: 1
+        },
+        label: {
+          show: true,
+          color: '#333'
+        }
       }
     ]
   };

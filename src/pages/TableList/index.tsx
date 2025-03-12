@@ -303,6 +303,11 @@ const TableList: React.FC = () => {
 
   const handleSowing = (record: API.RuleListItem) => {
     setCurrentSowingRecord(record);
+    
+    // 从localStorage获取现有记录
+    const existingRecords = localStorage.getItem('sowingRecords');
+    const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
+    
     // 创建一个新的播种记录
     const newSowingRecord = {
       id: `SW-${Date.now()}`,
@@ -313,8 +318,9 @@ const TableList: React.FC = () => {
       planNumber: '',
       createTime: new Date().toISOString(),
     };
-    // 只设置当前选中的记录
-    setSowingList([newSowingRecord]);
+    
+    // 显示所有记录，包括新记录
+    setSowingList([...allRecords, newSowingRecord]);
     setSowingModalOpen(true);
   };
 
@@ -339,16 +345,40 @@ const TableList: React.FC = () => {
     const existingRecords = localStorage.getItem('sowingRecords');
     const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
     
-    // 添加新记录
-    allRecords.push(newSowingRecord);
+    // 添加新记录到数组开头，保持最新记录在前
+    allRecords.unshift(newSowingRecord);
     
-    // 保存到localStorage
+    // 更新 localStorage
     localStorage.setItem('sowingRecords', JSON.stringify(allRecords));
 
+    // 更新当前显示的播种列表
+    setSowingList(allRecords);
+
     message.success('已添加到播种表');
-    setSowingModalOpen(false);
+    
+    // 清空表单
+    form.resetFields();
   };
 
+  // 更新播种弹窗的底部按钮
+  const sowingModalFooter = [
+    <Button key="cancel" onClick={() => {
+      setSowingModalOpen(false);
+      form.resetFields();
+    }}>
+      关闭
+    </Button>,
+    <Button 
+      key="generate" 
+      type="primary"
+      icon={<ExportOutlined />}
+      onClick={handleGenerateReport}
+    >
+      生成考种记载表
+    </Button>
+  ];
+
+  // 更新生成报告的处理函数
   const handleGenerateReport = () => {
     // 从localStorage获取所有播种记录
     const existingRecords = localStorage.getItem('sowingRecords');
@@ -359,23 +389,16 @@ const TableList: React.FC = () => {
       return;
     }
 
-    // 只获取当前选中的种子记录
-    const currentRecord = allRecords[allRecords.length - 1];
-    if (!currentRecord) {
-      message.warning('未找到当前种子记录');
-      return;
-    }
-
-    // 将当前播种记录添加到种质资源库
-    const newRecord = {
-      key: mockData.length + 1,
+    // 将所有播种记录添加到种质资源库
+    const newRecords = allRecords.map((record: SowingRecord) => ({
+      key: mockData.length + Math.random(), // 确保key唯一
       photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-      varietyName: currentRecord.varietyName,
+      varietyName: record.varietyName,
       type: '未分类',
       introductionYear: new Date().getFullYear().toString(),
       source: '播种记录',
       breedingType: 'regular',
-      seedNumber: currentRecord.seedNumber,
+      seedNumber: record.seedNumber,
       plantingYear: new Date().getFullYear().toString(),
       resistance: '',
       fruitCharacteristics: '',
@@ -394,10 +417,10 @@ const TableList: React.FC = () => {
       parentMale: '',
       parentFemale: '',
       hybridization: ''
-    };
+    }));
 
     // 添加到mockData
-    mockData.push(newRecord);
+    mockData.push(...newRecords);
 
     // 创建CSV内容
     const headers = [
@@ -411,14 +434,14 @@ const TableList: React.FC = () => {
 
     const csvContent = [
       headers.join(','),
-      [
-        currentRecord.code,
-        currentRecord.seedNumber,
-        currentRecord.varietyName,
-        currentRecord.sowingCount,
-        currentRecord.planNumber,
-        currentRecord.createTime
-      ].join(',')
+      ...allRecords.map((record: SowingRecord) => [
+        record.code,
+        record.seedNumber,
+        record.varietyName,
+        record.sowingCount,
+        record.planNumber,
+        record.createTime
+      ].join(','))
     ].join('\n');
 
     // 创建并下载文件
@@ -1586,19 +1609,7 @@ const TableList: React.FC = () => {
         </div>}
         open={sowingModalOpen}
         onCancel={() => setSowingModalOpen(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setSowingModalOpen(false)}>
-            取消
-          </Button>,
-          <Button 
-            key="generate" 
-            type="primary"
-            icon={<ExportOutlined />}
-            onClick={handleGenerateReport}
-          >
-            生成考种记载表
-          </Button>
-        ]}
+        footer={sowingModalFooter}
         width={900}
         bodyStyle={{ padding: '24px', maxHeight: '80vh', overflow: 'auto' }}
       >
