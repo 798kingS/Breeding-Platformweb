@@ -24,13 +24,13 @@ export default [
   },
   {
     path: '/welcome',
-    name: 'welcome',
-    icon: 'home',
+    name: '欢迎',
+    icon: 'smile',
     component: './Welcome',
   },
   {
     path: '/admin',
-    name: 'admin',
+    name: '管理页',
     icon: 'crown',
     access: 'canAdmin',
     routes: [
@@ -40,35 +40,22 @@ export default [
       },
       {
         path: '/admin/sub-page',
-        name: 'sub-page',
+        name: '二级管理页',
         component: './Admin',
       },
     ],
   },
   {
-    name: '种质资源管理',
-    icon: 'database',
-    path: '/germplasm',
-    routes: [
-      {
-        name: '种质资源库',
-        icon: 'experiment',
-        path: '/germplasm/list',
-        component: './TableList',
-      },
-      {
-        name: '留种记录',
-        icon: 'seedling',
-        path: '/germplasm/saved-seeds',
-        component: './SavedSeeds',
-      },
-      {
-        name: '考种记载表',
-        icon: 'fileSearch',
-        path: '/germplasm/sowing-records',
-        component: './SowingRecords',
-      },
-    ],
+    name: '种质资源库',
+    icon: 'table',
+    path: '/list',
+    component: './TableList',
+  },
+  {
+    name: 'AI智能问答',
+    icon: 'robot',
+    path: '/ai-chat',
+    component: './AIChat',
   },
   {
     path: '/',

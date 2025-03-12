@@ -159,3 +159,41 @@ export async function importExcel(formData: FormData) {
     data: formData,
   });
 }
+
+// Deepseek API配置
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+
+export async function queryAI(messages: { role: string; content: string }[]) {
+  try {
+    const response = await fetch(DEEPSEEK_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer sk-16176635cae049b186cd9f0b4ebfe352`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-reasoner',
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 500,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`请求失败: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data: data.choices[0].message.content,
+    };
+  } catch (error) {
+    console.error('AI API Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '未知错误',
+    };
+  }
+}
