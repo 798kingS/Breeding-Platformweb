@@ -2,7 +2,7 @@ export function generateMockData() {
   const mockData = [
     {
       key: 1,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-100%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '京欣1号',
       type: '西瓜',
       introductionYear: '2020',
@@ -30,7 +30,7 @@ export function generateMockData() {
     },
     {
       key: 2,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-10%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '甜王2号',
       type: '西瓜',
       introductionYear: '2021',
@@ -55,7 +55,7 @@ export function generateMockData() {
     },
     {
       key: 3,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-10%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '蜜甜1号',
       type: '甜瓜',
       introductionYear: '2022',
@@ -83,7 +83,7 @@ export function generateMockData() {
     },
     {
       key: 4,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-11%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '金贝1号',
       type: '南瓜',
       introductionYear: '2021',
@@ -108,7 +108,7 @@ export function generateMockData() {
     },
     {
       key: 5,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-11%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '青翠1号',
       type: '黄瓜',
       introductionYear: '2022',
@@ -136,7 +136,7 @@ export function generateMockData() {
     },
     {
       key: 6,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-12%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '甜心3号',
       type: '西瓜',
       introductionYear: '2021',
@@ -161,7 +161,7 @@ export function generateMockData() {
     },
     {
       key: 7,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-12%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '蜜香2号',
       type: '甜瓜',
       introductionYear: '2022',
@@ -186,7 +186,7 @@ export function generateMockData() {
     },
     {
       key: 8,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-13%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '金玉2号',
       type: '南瓜',
       introductionYear: '2021',
@@ -214,7 +214,7 @@ export function generateMockData() {
     },
     {
       key: 9,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-13%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '翠绿2号',
       type: '黄瓜',
       introductionYear: '2022',
@@ -239,7 +239,7 @@ export function generateMockData() {
     },
     {
       key: 10,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-14%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '京欣优选',
       type: '西瓜',
       introductionYear: '2023',
@@ -267,7 +267,7 @@ export function generateMockData() {
     },
     {
       key: 11,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-14%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '京欣红运',
       type: '西瓜',
       introductionYear: '2023',
@@ -295,7 +295,7 @@ export function generateMockData() {
     },
     {
       key: 12,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-15%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '蜜瓜皇后',
       type: '甜瓜',
       introductionYear: '2023',
@@ -323,7 +323,7 @@ export function generateMockData() {
     },
     {
       key: 13,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-15%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '金瓜一号',
       type: '南瓜',
       introductionYear: '2023',
@@ -348,7 +348,7 @@ export function generateMockData() {
     },
     {
       key: 14,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-16%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '翠玉3号',
       type: '黄瓜',
       introductionYear: '2023',
@@ -373,7 +373,7 @@ export function generateMockData() {
     },
     {
       key: 15,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-16%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '甜蜜红玉',
       type: '西瓜',
       introductionYear: '2023',
@@ -398,7 +398,7 @@ export function generateMockData() {
     },
     {
       key: 16,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-17%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '蜜香玉露',
       type: '甜瓜',
       introductionYear: '2023',
@@ -423,7 +423,7 @@ export function generateMockData() {
     },
     {
       key: 17,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-17%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '金玉满堂',
       type: '南瓜',
       introductionYear: '2023',
@@ -448,7 +448,7 @@ export function generateMockData() {
     },
     {
       key: 18,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-18%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '翠绿精品',
       type: '黄瓜',
       introductionYear: '2023',
@@ -473,7 +473,7 @@ export function generateMockData() {
     },
     {
       key: 19,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-19%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '京欣贵妃',
       type: '西瓜',
       introductionYear: '2023',
@@ -498,7 +498,7 @@ export function generateMockData() {
     },
     {
       key: 20,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-1%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '蜜瓜珍品',
       type: '甜瓜',
       introductionYear: '2023',
@@ -523,7 +523,7 @@ export function generateMockData() {
     },
     {
       key: 21,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-1%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '金瓜贵妃',
       type: '南瓜',
       introductionYear: '2023',
@@ -548,7 +548,7 @@ export function generateMockData() {
     },
     {
       key: 22,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-20%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '翠玉珍品',
       type: '黄瓜',
       introductionYear: '2023',
@@ -573,7 +573,7 @@ export function generateMockData() {
     },
     {
       key: 23,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-20%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '京欣玉露',
       type: '西瓜',
       introductionYear: '2023',
@@ -598,7 +598,7 @@ export function generateMockData() {
     },
     {
       key: 24,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-21%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '蜜香金玉',
       type: '甜瓜',
       introductionYear: '2023',
@@ -623,7 +623,7 @@ export function generateMockData() {
     },
     {
       key: 25,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-21%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '金玉良缘',
       type: '南瓜',
       introductionYear: '2023',
@@ -648,7 +648,7 @@ export function generateMockData() {
     },
     {
       key: 26,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-22%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '翠绿玉露',
       type: '黄瓜',
       introductionYear: '2023',
@@ -673,7 +673,7 @@ export function generateMockData() {
     },
     {
       key: 27,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-22%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '京欣金玉',
       type: '西瓜',
       introductionYear: '2023',
@@ -698,7 +698,7 @@ export function generateMockData() {
     },
     {
       key: 28,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-23%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '蜜瓜贵妃',
       type: '甜瓜',
       introductionYear: '2023',
@@ -723,7 +723,7 @@ export function generateMockData() {
     },
     {
       key: 29,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-23%E6%A4%8D%E6%A0%AA.jpeg',
       varietyName: '金瓜玉露',
       type: '南瓜',
       introductionYear: '2023',
@@ -748,7 +748,7 @@ export function generateMockData() {
     },
     {
       key: 30,
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      photo: 'https://breed-1258140596.cos.ap-shanghai.myqcloud.com/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90/%E7%A7%8D%E8%B4%A8%E8%B5%84%E6%BA%90%E7%85%A7%E7%89%87/TZ-24%E6%9E%9C%E5%AE%9E.jpeg',
       varietyName: '翠玉金玉',
       type: '黄瓜',
       introductionYear: '2023',
