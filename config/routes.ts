@@ -58,6 +58,12 @@ export default [
     component: './AIChat',
   },
   {
+    path: '/chat-history',
+    name: '聊天记录',
+    icon: 'HistoryOutlined',
+    component: './ChatHistory',
+  },
+  {
     path: '/',
     redirect: '/welcome',
   },

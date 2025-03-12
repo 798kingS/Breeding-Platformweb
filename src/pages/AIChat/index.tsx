@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { Input, Button, List, Avatar, message } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
-import { queryAI } from '@/services/ant-design-pro/api';
+import { history, useLocation } from 'umi';
+import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { queryAI } from '@/services/ant-design-pro/api';
 import 'github-markdown-css/github-markdown.css';
 import styles from './index.less';
 
@@ -13,6 +15,10 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: number;
+}
+
+interface LocationState {
+  sessionId?: string;
 }
 
 interface CodeProps {
@@ -26,6 +32,8 @@ const AIChat: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const location = useLocation<LocationState>();
+  const sessionId = location.state?.sessionId;
 
   // 自动滚动到底部
   const scrollToBottom = () => {
@@ -33,8 +41,53 @@ const AIChat: React.FC = () => {
   };
 
   useEffect(() => {
+    // 如果有sessionId，从历史记录中加载对话
+    if (sessionId) {
+      const history = localStorage.getItem('chatHistory');
+      if (history) {
+        const sessions = JSON.parse(history);
+        const currentSession = sessions.find((s: any) => s.id === sessionId);
+        if (currentSession) {
+          setMessages(currentSession.messages);
+        }
+      }
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // 保存聊天记录
+  const saveChatHistory = (newMessages: ChatMessage[]) => {
+    const history = localStorage.getItem('chatHistory');
+    let sessions = history ? JSON.parse(history) : [];
+
+    if (sessionId) {
+      // 更新现有会话
+      sessions = sessions.map((session: any) => {
+        if (session.id === sessionId) {
+          return {
+            ...session,
+            messages: newMessages,
+            lastMessage: newMessages[newMessages.length - 1].content
+          };
+        }
+        return session;
+      });
+    } else {
+      // 创建新会话
+      const newSession = {
+        id: uuidv4(),
+        messages: newMessages,
+        createdAt: Date.now(),
+        lastMessage: newMessages[newMessages.length - 1].content
+      };
+      sessions.unshift(newSession); // 添加到开头
+    }
+
+    localStorage.setItem('chatHistory', JSON.stringify(sessions));
+  };
 
   // 处理发送消息
   const handleSend = async () => {
@@ -48,18 +101,17 @@ const AIChat: React.FC = () => {
       timestamp: Date.now(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInputValue('');
     setLoading(true);
 
     try {
-      // 准备发送给API的消息历史
-      const apiMessages = messages.concat(userMessage).map(msg => ({
+      const apiMessages = updatedMessages.map(msg => ({
         role: msg.role,
         content: msg.content,
       }));
 
-      // 调用Deepseek API
       const response = await queryAI(apiMessages);
 
       if (response.success && response.data) {
@@ -68,7 +120,9 @@ const AIChat: React.FC = () => {
           content: response.data,
           timestamp: Date.now(),
         };
-        setMessages(prev => [...prev, aiMessage]);
+        const newMessages = [...updatedMessages, aiMessage];
+        setMessages(newMessages);
+        saveChatHistory(newMessages);
       } else {
         message.error(response.error || '获取AI回复失败');
       }
