@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Input, Button, Card, List, Avatar, message } from 'antd';
+import { Input, Button, List, Avatar, message } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import { queryAI } from '@/services/ant-design-pro/api';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import 'github-markdown-css/github-markdown.css';
+import styles from './index.less';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -117,64 +118,30 @@ const AIChat: React.FC = () => {
 
   return (
     <PageContainer>
-      <Card
-        bordered={false}
-        style={{
-          height: 'calc(100vh - 180px)',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <div
-          style={{
-            flex: 1,
-            overflow: 'auto',
-            padding: '20px',
-            backgroundColor: '#f5f5f5',
-            borderRadius: '8px',
-            marginBottom: '20px',
-          }}
-        >
+      <div className={styles['chat-container']}>
+        <div className={styles['message-list']}>
           <List
             itemLayout="horizontal"
             dataSource={messages}
             renderItem={(item) => (
-              <List.Item
-                style={{
-                  justifyContent: item.role === 'user' ? 'flex-end' : 'flex-start',
-                  border: 'none',
-                  padding: '8px 0',
-                }}
-              >
+              <List.Item className={`${styles['message-item']} ${styles[item.role]}`}>
                 <div
                   style={{
-                    maxWidth: '80%',
                     display: 'flex',
                     alignItems: 'flex-start',
                     flexDirection: item.role === 'user' ? 'row-reverse' : 'row',
+                    width: '100%',
                   }}
                 >
                   <Avatar
                     icon={item.role === 'user' ? <UserOutlined /> : <RobotOutlined />}
-                    style={{
-                      backgroundColor: item.role === 'user' ? '#1890ff' : '#52c41a',
-                      margin: item.role === 'user' ? '0 0 0 12px' : '0 12px 0 0',
-                    }}
+                    className={`${styles.avatar} ${styles[item.role]}`}
                   />
-                  <div
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: item.role === 'user' ? '#1890ff' : '#fff',
-                      color: item.role === 'user' ? '#fff' : '#000',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                      width: '100%',
-                    }}
-                  >
+                  <div className={styles['message-content']}>
                     {item.role === 'user' ? (
                       <div style={{ whiteSpace: 'pre-wrap' }}>{item.content}</div>
                     ) : (
-                      <div className="markdown-body" style={{ background: 'none' }}>
+                      <div className={`${styles['markdown-content']} markdown-body`}>
                         {renderMessageContent(item.content)}
                       </div>
                     )}
@@ -186,7 +153,7 @@ const AIChat: React.FC = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className={styles['input-area']}>
           <Input.TextArea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -200,12 +167,11 @@ const AIChat: React.FC = () => {
             icon={<SendOutlined />}
             onClick={handleSend}
             loading={loading}
-            style={{ height: 'auto' }}
           >
             发送
           </Button>
         </div>
-      </Card>
+      </div>
     </PageContainer>
   );
 };
