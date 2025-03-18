@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { Input, Button, List, Avatar, message } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
-import { history, useLocation } from 'umi';
+import { useLocation } from 'umi';
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -32,13 +32,13 @@ const AIChat: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const location = useLocation<LocationState>();
-  const sessionId = location.state?.sessionId;
+  const location = useLocation();
+  const sessionId = (location.state as LocationState)?.sessionId;
 
   // 自动滚动到底部
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // const scrollToBottom = () => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // };
 
   useEffect(() => {
     // 如果有sessionId，从历史记录中加载对话
@@ -55,7 +55,7 @@ const AIChat: React.FC = () => {
   }, [sessionId]);
 
   useEffect(() => {
-    scrollToBottom();
+    // scrollToBottom();
   }, [messages]);
 
   // 保存聊天记录
@@ -191,7 +191,7 @@ const AIChat: React.FC = () => {
                     icon={item.role === 'user' ? <UserOutlined /> : <RobotOutlined />}
                     className={`${styles.avatar} ${styles[item.role]}`}
                   />
-                  <div className={styles['message-content']}>
+                  <div className={styles['message-content']} style={{ backgroundColor: '#ffffff', color: '#333', borderRadius: '8px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
                     {item.role === 'user' ? (
                       <div style={{ whiteSpace: 'pre-wrap' }}>{item.content}</div>
                     ) : (

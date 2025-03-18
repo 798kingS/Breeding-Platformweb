@@ -14,7 +14,7 @@ import {
   ProTable,
 } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import { Button, Drawer, message, Upload, Modal, Table, Space, Divider, Input, InputNumber, Popconfirm, Typography, Form } from 'antd';
+import { Button, Drawer, message, Upload, Modal, Table, Space, Input, InputNumber, Popconfirm, Typography, Form } from 'antd';
 import React, { useRef, useState, useEffect } from 'react';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
@@ -27,12 +27,11 @@ import UpdateForm from './components/UpdateForm';
 const handleAdd = async (fields: API.RuleListItem) => {
   const hide = message.loading('正在添加');
   try {
-    // 确保所有必需字段都有值
-    const newRecord: API.RuleListItem = {
-      ...fields,
+    const newRecord = {
       key: mockData.length + 1,
       breedingType: fields.breedingType || 'regular',
-      photo: fields.photo || '',
+      photo1: fields.photo1 || '',
+      photo2: fields.photo2 || '',
       varietyName: fields.varietyName || '',
       type: fields.type || '',
       introductionYear: fields.introductionYear || '',
@@ -56,7 +55,6 @@ const handleAdd = async (fields: API.RuleListItem) => {
       hybridization: fields.hybridization || '',
     };
     
-    // 添加到mockData
     mockData.push(newRecord);
     
     hide();
@@ -122,6 +120,86 @@ const handleRemove = async (selectedRows: API.RuleListItem[]) => {
     hide();
     message.error('删除失败，请重试');
     return false;
+  }
+};
+
+const handleGenerateReport = () => {
+  const existingRecords = localStorage.getItem('sowingRecords');
+  const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
+
+  if (allRecords.length === 0) {
+    message.warning('暂无播种记录');
+    return;
+  }
+
+  const newRecords = allRecords.map((record: SowingRecord) => ({
+    key: mockData.length + Math.random(),
+    photo1: 'https://example.com/photo1.png',
+    photo2: 'https://example.com/photo2.png',
+    varietyName: record.varietyName,
+    type: '未分类',
+    introductionYear: new Date().getFullYear().toString(),
+    source: '播种记录',
+    breedingType: 'regular',
+    seedNumber: record.seedNumber,
+    plantingYear: new Date().getFullYear().toString(),
+    resistance: '',
+    fruitCharacteristics: '',
+    floweringPeriod: '',
+    fruitCount: 0,
+    yield: 0,
+    fruitShape: '',
+    skinColor: '',
+    fleshColor: '',
+    singleFruitWeight: 0,
+    fleshThickness: 0,
+    sugarContent: 0,
+    texture: '',
+    overallTaste: '',
+    combiningAbility: '',
+    parentMale: '',
+    parentFemale: '',
+    hybridization: ''
+  }));
+
+  mockData.push(...newRecords);
+
+  const headers = [
+    '种植编号',
+    '编号',
+    '品种名称',
+    '播种数量',
+    '计划编号',
+    '创建时间'
+  ];
+
+  const csvContent = [
+    headers.join(','),
+    ...allRecords.map((record: SowingRecord) => [
+      record.code,
+      record.seedNumber,
+      record.varietyName,
+      record.sowingCount,
+      record.planNumber,
+      record.createTime
+    ].join(','))
+  ].join('\n');
+
+  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', '考种记载表.csv');
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  message.success('已生成考种记载表并添加到种质资源库');
+
+  if (actionRef.current) {
+    actionRef.current.reload();
   }
 };
 
@@ -378,92 +456,6 @@ const TableList: React.FC = () => {
     </Button>
   ];
 
-  // 更新生成报告的处理函数
-  const handleGenerateReport = () => {
-    // 从localStorage获取所有播种记录
-    const existingRecords = localStorage.getItem('sowingRecords');
-    const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
-    
-    if (allRecords.length === 0) {
-      message.warning('暂无播种记录');
-      return;
-    }
-
-    // 将所有播种记录添加到种质资源库
-    const newRecords = allRecords.map((record: SowingRecord) => ({
-      key: mockData.length + Math.random(), // 确保key唯一
-      photo: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-      varietyName: record.varietyName,
-      type: '未分类',
-      introductionYear: new Date().getFullYear().toString(),
-      source: '播种记录',
-      breedingType: 'regular',
-      seedNumber: record.seedNumber,
-      plantingYear: new Date().getFullYear().toString(),
-      resistance: '',
-      fruitCharacteristics: '',
-      floweringPeriod: '',
-      fruitCount: 0,
-      yield: 0,
-      fruitShape: '',
-      skinColor: '',
-      fleshColor: '',
-      singleFruitWeight: 0,
-      fleshThickness: 0,
-      sugarContent: 0,
-      texture: '',
-      overallTaste: '',
-      combiningAbility: '',
-      parentMale: '',
-      parentFemale: '',
-      hybridization: ''
-    }));
-
-    // 添加到mockData
-    mockData.push(...newRecords);
-
-    // 创建CSV内容
-    const headers = [
-      '种植编号',
-      '编号',
-      '品种名称',
-      '播种数量',
-      '计划编号',
-      '创建时间'
-    ];
-
-    const csvContent = [
-      headers.join(','),
-      ...allRecords.map((record: SowingRecord) => [
-        record.code,
-        record.seedNumber,
-        record.varietyName,
-        record.sowingCount,
-        record.planNumber,
-        record.createTime
-      ].join(','))
-    ].join('\n');
-
-    // 创建并下载文件
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', '考种记载表.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    message.success('已生成考种记载表并添加到种质资源库');
-    
-    // 刷新表格数据
-    if (actionRef.current) {
-      actionRef.current.reload();
-    }
-  };
-
   // 更新类型定义，使所有字段可选
   interface SavedSeedRecord {
     key?: number;
@@ -574,15 +566,13 @@ const TableList: React.FC = () => {
         saveTime: new Date().toISOString(),
       };
 
-      // 保存到localStorage
       const existingRecords = localStorage.getItem('savedSeeds');
       const records = existingRecords ? JSON.parse(existingRecords) : [];
-      
-      // 检查是否已经存在相同的记录
+
       const isDuplicate = records.some((item: SavedSeedRecord) => 
         item.seedNumber === savedRecord.seedNumber
       );
-      
+
       if (isDuplicate) {
         message.error('该种子已经在留种记录中');
         hide();
@@ -591,11 +581,10 @@ const TableList: React.FC = () => {
 
       records.push(savedRecord);
       localStorage.setItem('savedSeeds', JSON.stringify(records));
-      
+
       hide();
       message.success('已成功保存到留种页面');
 
-      // 显示导出确认对话框
       Modal.confirm({
         title: '导出留种记录',
         content: '是否要导出留种记录为Excel文件？',
@@ -810,27 +799,36 @@ const TableList: React.FC = () => {
 
     const formData = new FormData();
     fileList.forEach((file) => {
-      formData.append('files[]', file);
+      formData.append('file', file);
     });
 
     setUploading(true);
 
     try {
       const response = await importExcel(formData);
+      console.log(response);
       if (response.success) {
-        message.success('导入成功');
+        message.success({
+          content: '导入成功',
+          duration: 2,
+          onClose: () => {
+            // 提供查看文件的链接
+            const fileURL = URL.createObjectURL(fileList[0]);
+            window.open(fileURL, '_blank');
+          },
+        });
         handleImportModalOpen(false);
         setFileList([]);
         // 刷新表格数据
         if (actionRef.current) {
           actionRef.current.reload();
         }
-        // 如果是模拟数据，可以直接添加到mockData
+        // 确保每次导入的数据都被追加到mockData的末尾
         if (response.data) {
           const newRecords = response.data.map((item: API.RuleListItem) => ({
             ...item,
             breedingType: item.breedingType || 'regular',
-            photo: item.photo || '',
+            photo: item.photo1 || '',
             varietyName: item.varietyName || '',
             type: item.type || '',
             introductionYear: item.introductionYear || '',
@@ -853,12 +851,14 @@ const TableList: React.FC = () => {
             combiningAbility: item.combiningAbility || '',
             hybridization: item.hybridization || '',
           }));
+          // 追加到mockData
           mockData.push(...newRecords);
         }
       } else {
-        message.error(response.message || '导入失败');
+        console.log(response);
       }
     } catch (error) {
+      console.error(error);
       message.error('导入失败，请重试');
     }
 
@@ -1109,6 +1109,13 @@ const TableList: React.FC = () => {
     },
   ];
 
+  const handleCollapseToggle = () => {
+    const collapsed = false;
+    if (actionRef.current) {
+      actionRef.current.reload();
+    }
+  };
+
   return (
     <PageContainer>
       <ProTable<API.RuleListItem, API.PageParams>
@@ -1125,11 +1132,7 @@ const TableList: React.FC = () => {
             return showCollapseButton ? (
               <a
                 style={{ fontSize: '14px', color: '#2E7D32' }}
-                onClick={() => {
-                  if (actionRef.current?.formRef?.current) {
-                    actionRef.current.formRef.current.setCollapsed(!collapsed);
-                  }
-                }}
+                onClick={handleCollapseToggle}
               >
                 {collapsed ? '展开' : '收起'} {collapsed ? <DownOutlined /> : <UpOutlined />}
               </a>

@@ -1,10 +1,11 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Table, message } from 'antd';
-import { ExportOutlined } from '@ant-design/icons';
+import { Button, Table, message, Input } from 'antd';
+import { ExportOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 
 const SavedSeeds: React.FC = () => {
   const [savedSeedList, setSavedSeedList] = useState<any[]>([]);
+  const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
     // 从localStorage加载留种记录
@@ -85,6 +86,22 @@ const SavedSeeds: React.FC = () => {
     document.body.removeChild(link);
   };
 
+  const handleDelete = (key: number) => {
+    const newList = savedSeedList.filter(item => item.key !== key);
+    setSavedSeedList(newList);
+    localStorage.setItem('savedSeeds', JSON.stringify(newList));
+    message.success('记录已删除');
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchText(value);
+  };
+
+  const filteredList = savedSeedList.filter(item =>
+    item.varietyName.includes(searchText) ||
+    item.seedNumber.includes(searchText)
+  );
+
   const columns = [
     {
       title: '品种名称',
@@ -120,56 +137,17 @@ const SavedSeeds: React.FC = () => {
       dataIndex: 'resistance',
     },
     {
-      title: '结果特征',
-      dataIndex: 'fruitCharacteristics',
-    },
-    {
-      title: '开花期/果实发育期',
-      dataIndex: 'floweringPeriod',
-    },
-    {
-      title: '留果个数',
-      dataIndex: 'fruitCount',
-    },
-    {
-      title: '产量',
-      dataIndex: 'yield',
-    },
-    {
-      title: '果型',
-      dataIndex: 'fruitShape',
-    },
-    {
-      title: '皮色',
-      dataIndex: 'skinColor',
-    },
-    {
-      title: '肉色',
-      dataIndex: 'fleshColor',
-    },
-    {
-      title: '单果重(g)',
-      dataIndex: 'singleFruitWeight',
-    },
-    {
-      title: '肉厚(mm)',
-      dataIndex: 'fleshThickness',
-    },
-    {
-      title: '糖度(°Brix)',
-      dataIndex: 'sugarContent',
-    },
-    {
-      title: '质地',
-      dataIndex: 'texture',
-    },
-    {
-      title: '总体口感',
-      dataIndex: 'overallTaste',
-    },
-    {
-      title: '配合力',
-      dataIndex: 'combiningAbility',
+      title: '操作',
+      dataIndex: 'operation',
+      render: (_: any, record: any) => (
+        <Button
+          type="link"
+          icon={<DeleteOutlined />}
+          onClick={() => handleDelete(record.key)}
+        >
+          删除
+        </Button>
+      ),
     },
   ];
 
@@ -178,6 +156,13 @@ const SavedSeeds: React.FC = () => {
       header={{
         title: '留种记录',
         extra: [
+          <Input
+            key="search"
+            placeholder="搜索品种名称或编号"
+            prefix={<SearchOutlined />}
+            onChange={e => handleSearch(e.target.value)}
+            style={{ width: 200, marginRight: 16 }}
+          />,
           <Button
             key="export"
             type="primary"
@@ -191,7 +176,7 @@ const SavedSeeds: React.FC = () => {
     >
       <Table
         columns={columns}
-        dataSource={savedSeedList}
+        dataSource={filteredList}
         rowKey="key"
         scroll={{ x: 2000 }}
         pagination={{

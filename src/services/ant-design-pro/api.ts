@@ -149,12 +149,17 @@ export async function saveSeed(body: {
 }
 
 /** 导入Excel POST /api/import-excel */
+// 导出一个异步函数，用于导入Excel文件
 export async function importExcel(formData: FormData) {
+  // 发送POST请求，请求地址为'/api/seed/Seedimport'，请求方法为POST，请求参数为formData
   return request<{
-    data: API.RuleListItem[];
-    success: boolean;
-    message?: string;
-  }>('/api/import-excel', {
+    data: API.RuleListItem[]; // 返回的数据类型为API.RuleListItem数组
+    success: boolean; // 返回的成功状态
+    message?: string; // 返回的消息
+    headers: {
+      'Content-Type': 'multipart/form-data', // 手动设置请求头
+    },
+  }>('/api/seed/Seedimport', {
     method: 'POST',
     data: formData,
   });

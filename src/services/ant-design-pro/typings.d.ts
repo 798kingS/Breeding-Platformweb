@@ -36,7 +36,8 @@ declare namespace API {
 
   type RuleListItem = {
     key: number;
-    photo: string;
+    photo1: string;
+    photo2: string;
     varietyName: string;
     type: string;
     introductionYear: string;
@@ -59,8 +60,8 @@ declare namespace API {
     overallTaste: string;
     combiningAbility: string;
     hybridization: string;
-    parentMale?: string;
-    parentFemale?: string;
+    // parentMale?: string;
+    // parentFemale?: string;
   };
 
   type RuleList = {

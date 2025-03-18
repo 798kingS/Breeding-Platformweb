@@ -35,6 +35,8 @@ export type FormValueType = {
   hybridization: string;
   parentMale?: string;
   parentFemale?: string;
+  name: string;
+  desc: string;
 };
 
 export type UpdateFormProps = {
