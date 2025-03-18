@@ -318,7 +318,7 @@ const TableList: React.FC = () => {
       <Input />
     );
 
-    return (
+        return (
       <td {...restProps}>
         {editing ? (
           <Form.Item
@@ -806,8 +806,8 @@ const TableList: React.FC = () => {
 
     try {
       const response = await importExcel(formData);
-      console.log(response);
-      if (response.success) {
+      console.log(response.message);
+      if (response) {
         message.success({
           content: '导入成功',
           duration: 2,
@@ -828,7 +828,8 @@ const TableList: React.FC = () => {
           const newRecords = response.data.map((item: API.RuleListItem) => ({
             ...item,
             breedingType: item.breedingType || 'regular',
-            photo: item.photo1 || '',
+            photo1: item.photo1 || '',
+            photo2: item.photo2 || '',
             varietyName: item.varietyName || '',
             type: item.type || '',
             introductionYear: item.introductionYear || '',
@@ -1056,7 +1057,7 @@ const TableList: React.FC = () => {
       dataIndex: 'hybridization',
       valueType: 'text',
       render: (_, record) => {
-        return (
+          return (
           <Space>
             {record.hybridization && (
               <>

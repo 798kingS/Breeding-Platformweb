@@ -1,11 +1,12 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Table, message, Input } from 'antd';
+import { Button, Table, message, Input, Modal, Space } from 'antd';
 import { ExportOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 
 const SavedSeeds: React.FC = () => {
   const [savedSeedList, setSavedSeedList] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   useEffect(() => {
     // 从localStorage加载留种记录
@@ -87,10 +88,39 @@ const SavedSeeds: React.FC = () => {
   };
 
   const handleDelete = (key: number) => {
-    const newList = savedSeedList.filter(item => item.key !== key);
-    setSavedSeedList(newList);
-    localStorage.setItem('savedSeeds', JSON.stringify(newList));
-    message.success('记录已删除');
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这条记录吗？',
+      okText: '确认',
+      cancelText: '取消',
+      onOk: () => {
+        const newList = savedSeedList.filter(item => item.key !== key);
+        setSavedSeedList(newList);
+        localStorage.setItem('savedSeeds', JSON.stringify(newList));
+        message.success('记录已删除');
+      },
+    });
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请选择要删除的记录');
+      return;
+    }
+
+    Modal.confirm({
+      title: '确认批量删除',
+      content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
+      okText: '确认',
+      cancelText: '取消',
+      onOk: () => {
+        const newList = savedSeedList.filter(item => !selectedRowKeys.includes(item.key));
+        setSavedSeedList(newList);
+        localStorage.setItem('savedSeeds', JSON.stringify(newList));
+        setSelectedRowKeys([]);
+        message.success(`已删除 ${selectedRowKeys.length} 条记录`);
+      },
+    });
   };
 
   const handleSearch = (value: string) => {
@@ -142,6 +172,7 @@ const SavedSeeds: React.FC = () => {
       render: (_: any, record: any) => (
         <Button
           type="link"
+          danger
           icon={<DeleteOutlined />}
           onClick={() => handleDelete(record.key)}
         >
@@ -151,30 +182,49 @@ const SavedSeeds: React.FC = () => {
     },
   ];
 
+  const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
+    setSelectedRowKeys(newSelectedRowKeys);
+  };
+
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: onSelectChange,
+  };
+
   return (
     <PageContainer
       header={{
         title: '留种记录',
         extra: [
-          <Input
-            key="search"
-            placeholder="搜索品种名称或编号"
-            prefix={<SearchOutlined />}
-            onChange={e => handleSearch(e.target.value)}
-            style={{ width: 200, marginRight: 16 }}
-          />,
-          <Button
-            key="export"
-            type="primary"
-            icon={<ExportOutlined />}
-            onClick={handleExport}
-          >
-            导出记录
-          </Button>,
+          <Space key="actions">
+            <Input
+              placeholder="搜索品种名称或编号"
+              prefix={<SearchOutlined />}
+              onChange={e => handleSearch(e.target.value)}
+              style={{ width: 200 }}
+            />
+            {selectedRowKeys.length > 0 && (
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={handleBatchDelete}
+              >
+                批量删除 ({selectedRowKeys.length})
+              </Button>
+            )}
+            <Button
+              type="primary"
+              icon={<ExportOutlined />}
+              onClick={handleExport}
+            >
+              导出记录
+            </Button>
+          </Space>
         ],
       }}
     >
       <Table
+        rowSelection={rowSelection}
         columns={columns}
         dataSource={filteredList}
         rowKey="key"
