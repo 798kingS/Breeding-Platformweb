@@ -54,9 +54,9 @@ const handleAdd = async (fields: API.RuleListItem) => {
       combiningAbility: fields.combiningAbility || '',
       hybridization: fields.hybridization || '',
     };
-    
+
     mockData.push(newRecord);
-    
+
     hide();
     message.success('添加成功');
     return true;
@@ -198,9 +198,9 @@ const handleGenerateReport = () => {
 
   message.success('已生成考种记载表并添加到种质资源库');
 
-  if (actionRef.current) {
-    actionRef.current.reload();
-  }
+  // if (actionRef.current) {
+  //   actionRef.current.reload();
+  // }
 };
 
 const TableList: React.FC = () => {
@@ -318,7 +318,7 @@ const TableList: React.FC = () => {
       <Input />
     );
 
-        return (
+    return (
       <td {...restProps}>
         {editing ? (
           <Form.Item
@@ -347,7 +347,7 @@ const TableList: React.FC = () => {
 
   const handleCreateHybridization = (targetVariety: API.RuleListItem) => {
     if (!currentVariety || !targetVariety) return;
-    
+
     // 更新当前品种的杂交信息
     const currentIndex = mockData.findIndex(item => item.key === currentVariety.key);
     if (currentIndex !== -1) {
@@ -359,7 +359,7 @@ const TableList: React.FC = () => {
       };
       mockData[currentIndex] = updatedVariety;
     }
-    
+
     const newHybrid = {
       id: `${currentVariety.seedNumber}X${targetVariety.seedNumber}-${hybridizationList.length + 1}`,
       femaleNumber: currentVariety.seedNumber,
@@ -369,10 +369,10 @@ const TableList: React.FC = () => {
       hybridization: `${targetVariety.varietyName}*${currentVariety.varietyName}`,
       date: new Date().toISOString().split('T')[0]
     };
-    
+
     setHybridizationList([...hybridizationList, newHybrid]);
     message.success('已添加到杂交配组表');
-    
+
     // 刷新表格数据
     if (actionRef.current) {
       actionRef.current.reload();
@@ -381,11 +381,11 @@ const TableList: React.FC = () => {
 
   const handleSowing = (record: API.RuleListItem) => {
     setCurrentSowingRecord(record);
-    
+
     // 从localStorage获取现有记录
     const existingRecords = localStorage.getItem('sowingRecords');
     const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
-    
+
     // 创建一个新的播种记录
     const newSowingRecord = {
       id: `SW-${Date.now()}`,
@@ -396,7 +396,7 @@ const TableList: React.FC = () => {
       planNumber: '',
       createTime: new Date().toISOString(),
     };
-    
+
     // 显示所有记录，包括新记录
     setSowingList([...allRecords, newSowingRecord]);
     setSowingModalOpen(true);
@@ -422,10 +422,10 @@ const TableList: React.FC = () => {
     // 从localStorage获取现有记录
     const existingRecords = localStorage.getItem('sowingRecords');
     const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
-    
+
     // 添加新记录到数组开头，保持最新记录在前
     allRecords.unshift(newSowingRecord);
-    
+
     // 更新 localStorage
     localStorage.setItem('sowingRecords', JSON.stringify(allRecords));
 
@@ -433,7 +433,7 @@ const TableList: React.FC = () => {
     setSowingList(allRecords);
 
     message.success('已添加到播种表');
-    
+
     // 清空表单
     form.resetFields();
   };
@@ -446,8 +446,8 @@ const TableList: React.FC = () => {
     }}>
       关闭
     </Button>,
-    <Button 
-      key="generate" 
+    <Button
+      key="generate"
       type="primary"
       icon={<ExportOutlined />}
       onClick={handleGenerateReport}
@@ -548,7 +548,7 @@ const TableList: React.FC = () => {
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute('href', url);
     link.setAttribute('download', '留种记录.csv');
     link.style.visibility = 'hidden';
@@ -569,7 +569,7 @@ const TableList: React.FC = () => {
       const existingRecords = localStorage.getItem('savedSeeds');
       const records = existingRecords ? JSON.parse(existingRecords) : [];
 
-      const isDuplicate = records.some((item: SavedSeedRecord) => 
+      const isDuplicate = records.some((item: SavedSeedRecord) =>
         item.seedNumber === savedRecord.seedNumber
       );
 
@@ -612,7 +612,7 @@ const TableList: React.FC = () => {
       const records = existingRecords ? JSON.parse(existingRecords) : [];
       const validRecords: SavedSeedRecord[] = [];
       const duplicates: string[] = [];
-      
+
       for (const record of selectedRows) {
         if (!record.varietyName || !record.type || !record.seedNumber) {
           message.error(`品种"${record.varietyName || '未知'}"缺少必要的种子信息`);
@@ -685,10 +685,10 @@ const TableList: React.FC = () => {
       // 从localStorage获取现有记录
       const existingRecords = localStorage.getItem('sowingRecords');
       const records = existingRecords ? JSON.parse(existingRecords) : [];
-      
+
       // 添加新记录
       records.push(...newSowingRecords);
-      
+
       // 保存到localStorage
       localStorage.setItem('sowingRecords', JSON.stringify(records));
 
@@ -713,7 +713,7 @@ const TableList: React.FC = () => {
     const headers = ['编号', '母本编号', '父本编号', '母本名称', '父本名称'];
     const csvContent = [
       headers.join(','),
-      ...hybridizationList.map(item => 
+      ...hybridizationList.map(item =>
         [item.id, item.femaleNumber, item.maleNumber, item.femaleName, item.maleName].join(',')
       )
     ].join('\n');
@@ -722,7 +722,7 @@ const TableList: React.FC = () => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute('href', url);
     link.setAttribute('download', '杂交配组表.csv');
     link.style.visibility = 'hidden';
@@ -780,8 +780,8 @@ const TableList: React.FC = () => {
             </Popconfirm>
           </span>
         ) : (
-          <Typography.Link 
-            disabled={editingKey !== ''} 
+          <Typography.Link
+            disabled={editingKey !== ''}
             onClick={() => handleEdit(record)}
           >
             编辑
@@ -874,8 +874,8 @@ const TableList: React.FC = () => {
       setFileList(newFileList);
     },
     beforeUpload: (file: any) => {
-      const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-                     file.type === 'application/vnd.ms-excel';
+      const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        file.type === 'application/vnd.ms-excel';
       if (!isExcel) {
         message.error('只能上传Excel文件！');
         return false;
@@ -1057,7 +1057,7 @@ const TableList: React.FC = () => {
       dataIndex: 'hybridization',
       valueType: 'text',
       render: (_, record) => {
-          return (
+        return (
           <Space>
             {record.hybridization && (
               <>
@@ -1483,7 +1483,7 @@ const TableList: React.FC = () => {
             <Button icon={<UploadOutlined />} size="large">选择Excel文件</Button>
           </Upload>
         </div>
-        
+
         <div style={{ background: '#f6ffed', padding: '16px', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
           <h4 style={{ color: '#52c41a', marginTop: 0 }}>注意事项：</h4>
           <ul style={{ color: '#666', marginBottom: 0 }}>
@@ -1507,8 +1507,8 @@ const TableList: React.FC = () => {
           <Button key="cancel" onClick={() => setHybridModalOpen(false)}>
             关闭
           </Button>,
-          <Button 
-            key="export" 
+          <Button
+            key="export"
             type="primary"
             icon={<ExportOutlined />}
             onClick={handleExportHybridization}
@@ -1521,7 +1521,7 @@ const TableList: React.FC = () => {
           <div style={{ background: '#f6ffed', padding: '16px', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
             <h3 style={{ margin: '0', color: '#52c41a' }}>当前品种：{currentVariety?.varietyName}</h3>
           </div>
-          
+
           <div style={{ background: '#fff', borderRadius: '8px', padding: '16px' }}>
             <h3 style={{ margin: '0 0 16px', color: '#1890ff' }}>可选杂交品种</h3>
             <Table
@@ -1556,8 +1556,8 @@ const TableList: React.FC = () => {
                   ),
                 },
               ]}
-              dataSource={mockData.filter(item => 
-                item.key !== currentVariety?.key && 
+              dataSource={mockData.filter(item =>
+                item.key !== currentVariety?.key &&
                 item.type === currentVariety?.type
               )}
               rowKey="key"
