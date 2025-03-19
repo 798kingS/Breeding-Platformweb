@@ -1,5 +1,4 @@
 import { Footer } from '@/components';
-import { login } from '@/services/ant-design-pro/api';
 import { getFakeCaptcha } from '@/services/ant-design-pro/login';
 import {
   AlipayCircleOutlined,
@@ -98,40 +97,66 @@ const LoginMessage: React.FC<{
 const Login: React.FC = () => {
   const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});
   const [type, setType] = useState<string>('account');
-  const { initialState, setInitialState } = useModel('@@initialState');
+  const { setInitialState } = useModel('@@initialState');
   const { styles } = useStyles();
   const intl = useIntl();
 
-  const fetchUserInfo = async () => {
-    const userInfo = await initialState?.fetchUserInfo?.();
-    if (userInfo) {
+  const handleSubmit = async (values: API.LoginParams) => {
+    try {
+      // 模拟登录成功逻辑
+      const mockUserInfo = {
+        name: values.username || 'User',
+        avatar: 'https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png',
+        userid: '00000002',
+        email: '2104170424@qq.com',
+        signature: '专注种植，用心培育',
+        title: '种植专家',
+        group: '育种平台－种植部门',
+        tags: [
+          {
+            key: '0',
+            label: '种植达人',
+          },
+        ],
+        notifyCount: 5,
+        unreadCount: 3,
+        country: 'China',
+        access: 'user',
+        geographic: {
+          province: {
+            label: '浙江省',
+            key: '330000',
+          },
+          city: {
+            label: '湖州市',
+            key: '330500',
+          },
+        },
+        address: '湖州市吴兴区',
+        phone: '0572-12345678',
+      };
+
+      // 设置登录状态
+      setUserLoginState({ status: 'ok', type });
+
+      // 设置用户信息
       flushSync(() => {
         setInitialState((s) => ({
           ...s,
-          currentUser: userInfo,
+          currentUser: mockUserInfo,
         }));
       });
-    }
-  };
 
-  const handleSubmit = async (values: API.LoginParams) => {
-    try {
-      // 登录
-      const msg = await login({ ...values, type });
-      if (msg.status === 'ok') {
-        const defaultLoginSuccessMessage = intl.formatMessage({
-          id: 'pages.login.success',
-          defaultMessage: '登录成功！',
-        });
-        message.success(defaultLoginSuccessMessage);
-        await fetchUserInfo();
-        const urlParams = new URL(window.location.href).searchParams;
-        history.push(urlParams.get('redirect') || '/');
-        return;
-      }
-      console.log(msg);
-      // 如果失败去设置用户错误信息
-      setUserLoginState(msg);
+      const defaultLoginSuccessMessage = intl.formatMessage({
+        id: 'pages.login.success',
+        defaultMessage: '登录成功！',
+      });
+      message.success(defaultLoginSuccessMessage);
+
+      // 跳转到首页
+      const urlParams = new URL(window.location.href).searchParams;
+      history.push(urlParams.get('redirect') || '/');
+      return;
     } catch (error) {
       const defaultLoginFailureMessage = intl.formatMessage({
         id: 'pages.login.failure',

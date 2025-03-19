@@ -15,7 +15,7 @@ export default {
     // localhost:8000/api/** -> https://preview.pro.ant.design/api/**
     '/api/': {
       // 要代理的地址
-      target: 'http://192.168.43.188:8334',
+      target: 'http://101.43.79.204:8334',
       // 配置了这个可以从 http 代理到 https
       // 依赖 origin 的功能可能需要这个，比如 cookie
       changeOrigin: true,
@@ -30,14 +30,14 @@ export default {
     // localhost:8000/api/** -> https://preview.pro.ant.design/api/**
     '/api/': {
       // target: 'https://proapi.azurewebsites.net',
-      target: 'http://192.168.43.188:8334',
+      target: 'http://101.43.79.204:8334',
       changeOrigin: true,
       pathRewrite: { '^': '' },
     },
   },
   pre: {
     '/api/': {
-      target: 'http://192.168.43.188:8334',
+      target: 'http://101.43.79.204:8334',
       changeOrigin: true,
       pathRewrite: { '^': '' },
     },

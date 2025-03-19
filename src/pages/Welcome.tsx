@@ -4,8 +4,7 @@ import React, { useEffect } from 'react';
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
   CartesianGrid, Tooltip, Legend, LineChart, Line, RadarChart, Radar, 
-  PolarGrid, PolarAngleAxis, PolarRadiusAxis, AreaChart, Area, ScatterChart,
-  Scatter, ZAxis
+  PolarGrid, PolarAngleAxis, PolarRadiusAxis, AreaChart, Area
 } from 'recharts';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
@@ -51,13 +50,58 @@ const Welcome: React.FC = () => {
     { name: '结果期', 西瓜: 40, 甜瓜: 35, 南瓜: 38, 黄瓜: 30 },
   ];
 
-  // 新增：产量与环境关系数据
+  // 修改：产量与环境关系数据
   const yieldEnvironmentData = [
-    { temperature: 20, humidity: 65, yield: 80, name: '春季' },
-    { temperature: 28, humidity: 75, yield: 95, name: '夏季' },
-    { temperature: 25, humidity: 70, yield: 90, name: '秋季' },
-    { temperature: 15, humidity: 60, yield: 70, name: '冬季' },
+    { temperature: 20, humidity: 65, yield: 65, name: '20°C' },
+    { temperature: 28, humidity: 75, yield: 75, name: '28°C' },
+    { temperature: 25, humidity: 70, yield: 70, name: '25°C' },
+    { temperature: 15, humidity: 60, yield: 60, name: '15°C' },
   ];
+
+  // 添加：产量与温度关系图表配置
+  const yieldTempChartOption: EChartsOption = {
+    title: {
+      text: '产量与环境关系分析',
+      textStyle: {
+        color: '#2E7D32',
+        fontSize: '16px',
+        fontWeight: 'normal'
+      }
+    },
+    tooltip: {
+      trigger: 'axis',
+      formatter: '{b}: {c}%'
+    },
+    xAxis: {
+      type: 'category',
+      data: yieldEnvironmentData.map(item => item.name),
+      name: '产量温度(°C)',
+      nameLocation: 'middle',
+      nameGap: 30,
+      axisLabel: {
+        color: '#666'
+      }
+    },
+    yAxis: {
+      type: 'value',
+      name: '湿度(%)',
+      min: 0,
+      max: 80,
+      interval: 20,
+      axisLabel: {
+        formatter: '{value}%',
+        color: '#666'
+      }
+    },
+    series: [{
+      data: yieldEnvironmentData.map(item => item.yield),
+      type: 'scatter',
+      symbolSize: 20,
+      itemStyle: {
+        color: '#2E7D32'
+      }
+    }]
+  };
 
   // 修改：地域品种统计数据
   interface VarietyItem {
@@ -749,37 +793,7 @@ const Welcome: React.FC = () => {
             >
               <div style={{ height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E8F5E9" />
-                    <XAxis 
-                      dataKey="temperature" 
-                      name="温度" 
-                      unit="°C"
-                      label={{ value: '温度(°C)', position: 'bottom' }}
-                    />
-                    <YAxis 
-                      dataKey="humidity" 
-                      name="湿度" 
-                      unit="%"
-                      label={{ value: '湿度(%)', angle: -90, position: 'insideLeft' }}
-                    />
-                    <ZAxis 
-                      dataKey="yield" 
-                      name="产量" 
-                      unit="%" 
-                      range={[50, 400]}
-                    />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                    <Legend />
-                    <Scatter 
-                      name="产量分布" 
-                      data={yieldEnvironmentData} 
-                      fill={CHART_COLORS.primary}
-                      shape="circle"
-                    />
-                  </ScatterChart>
+                  <ReactECharts option={yieldTempChartOption} style={{ height: '100%' }} />
                 </ResponsiveContainer>
               </div>
             </Card>
