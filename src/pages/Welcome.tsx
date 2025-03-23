@@ -10,6 +10,7 @@ import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import type { EChartsOption } from 'echarts';
 import { PlayCircleOutlined } from '@ant-design/icons';
+import { message } from 'antd';
 
 const { Title, Paragraph } = Typography;
 
@@ -272,6 +273,38 @@ const Welcome: React.FC = () => {
     }
   };
 
+  // 修改地图数据加载
+  useEffect(() => {
+    // 加载湖州市及其区县地图数据
+    fetch('https://geo.datav.aliyun.com/areas_v3/bound/330500_full.json')
+      .then(response => response.json())
+      .then(geoJson => {
+        // 处理地理数据以适应显示需求
+        const features = geoJson.features.map((feature: any) => {
+          // 简化区县名称，去掉"市辖区"等后缀
+          const name = feature.properties.name;
+          feature.properties.name = name
+            .replace('市辖区', '')
+            .replace('区', '')
+            .replace('县', '');
+          return feature;
+        });
+        
+        // 更新处理后的地理数据
+        const processedGeoJson = {
+          ...geoJson,
+          features
+        };
+
+        // 注册地图数据
+        echarts.registerMap('huzhou', processedGeoJson);
+      })
+      .catch(error => {
+        console.error('加载地图数据失败:', error);
+        message.error('地图数据加载失败，请刷新页面重试');
+      });
+  }, []);
+
   // 修改地图配置
   const mapOption: EChartsOption = {
     title: {
@@ -319,7 +352,6 @@ const Welcome: React.FC = () => {
         map: 'huzhou',
         roam: true,
         zoom: 1.2,
-        center: [120.1, 30.9],
         label: {
           show: true,
           color: '#333',
@@ -340,44 +372,12 @@ const Welcome: React.FC = () => {
           }
         },
         data: regionVarietyData.map(item => ({
-          name: item.name,
+          name: item.name.replace('区', '').replace('县', ''),
           value: item.varieties.reduce((sum, v) => sum + v.count, 0)
         }))
       }
     ]
   };
-
-  // 修改地图数据加载
-  useEffect(() => {
-    // 首先加载湖州市边界数据
-    fetch('https://geo.datav.aliyun.com/areas_v3/bound/330500_full.json')
-      .then(response => response.json())
-      .then(geoJson => {
-        // 处理地理数据以适应显示需求
-        const features = geoJson.features.map((feature: any) => {
-          // 简化区县名称，去掉"市辖区"等后缀
-          if (feature.properties.name.includes('市辖区')) {
-            feature.properties.name = feature.properties.name.replace('市辖区', '');
-          }
-          if (feature.properties.name.includes('县')) {
-            feature.properties.name = feature.properties.name.replace('县', '');
-          }
-          return feature;
-        });
-        
-        // 更新处理后的地理数据
-        const processedGeoJson = {
-          ...geoJson,
-          features
-        };
-
-        // 注册地图数据
-        echarts.registerMap('huzhou', processedGeoJson);
-      })
-      .catch(error => {
-        console.error('加载地图数据失败:', error);
-      });
-  }, []);
 
   return (
     <PageContainer>

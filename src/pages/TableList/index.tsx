@@ -1172,6 +1172,13 @@ const TableList: React.FC = () => {
             Table.SELECTION_INVERT,
           ],
         }}
+        pagination={{
+          showQuickJumper: true,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          defaultPageSize: 10,
+          showTotal: (total) => `共 ${total} 条记录`,
+        }}
       />
       {selectedRowsState?.length > 0 && (
         <FooterToolbar
