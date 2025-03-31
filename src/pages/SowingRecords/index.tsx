@@ -86,7 +86,7 @@ const SowingRecords: React.FC = () => {
   return (
     <PageContainer
       header={{
-        title: '考种记载表',
+        title: '播种计划表',
         extra: [
           <Button
             key="export"

@@ -190,13 +190,13 @@ const handleGenerateReport = () => {
   const url = URL.createObjectURL(blob);
 
   link.setAttribute('href', url);
-  link.setAttribute('download', '考种记载表.csv');
+  link.setAttribute('download', '播种计划表.csv');
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 
-  message.success('已生成考种记载表并添加到种质资源库');
+  message.success('已生成播种计划表并添加到种质资源库');
 
   // if (actionRef.current) {
   //   actionRef.current.reload();
@@ -318,7 +318,7 @@ const TableList: React.FC = () => {
       <Input />
     );
 
-    return (
+        return (
       <td {...restProps}>
         {editing ? (
           <Form.Item
@@ -380,62 +380,132 @@ const TableList: React.FC = () => {
   };
 
   const handleSowing = (record: API.RuleListItem) => {
+    // 设置当前选中的记录
     setCurrentSowingRecord(record);
 
     // 从localStorage获取现有记录
     const existingRecords = localStorage.getItem('sowingRecords');
     const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
 
-    // 创建一个新的播种记录
-    const newSowingRecord = {
-      id: `SW-${Date.now()}`,
-      code: `TZ-${record.key || 1}`,
-      seedNumber: record.seedNumber,
-      varietyName: record.varietyName,
-      sowingCount: 0,
-      planNumber: '',
-      createTime: new Date().toISOString(),
-    };
+    // 只显示与当前品种相关的记录
+    const filteredRecords = allRecords.filter((item: any) => 
+      item.seedNumber === record.seedNumber && 
+      item.varietyName === record.varietyName
+    );
 
-    // 显示所有记录，包括新记录
-    setSowingList([...allRecords, newSowingRecord]);
+    // 设置播种列表
+    setSowingList(filteredRecords);
+    
+    // 打开模态框
     setSowingModalOpen(true);
+
+    // 设置表单的初始值
+    setTimeout(() => {
+      form.setFieldsValue({
+        code: `TZ-${record.key || 1}`,
+        seedNumber: record.seedNumber || '',
+        varietyName: record.varietyName || '',
+        sowingCount: 0,
+        planNumber: '',
+      });
+    }, 100);
   };
 
-  // 更新播种表单的提交处理
   const handleSowingSubmit = async (values: any) => {
+    console.log('Form submitted with values:', values);
+    
     if (!currentSowingRecord) {
       message.error('未选择品种');
       return;
     }
 
-    const newSowingRecord: SowingRecord = {
-      id: `SW-${Date.now()}`,
-      code: values.code || `TZ-${currentSowingRecord.key}`,
-      seedNumber: currentSowingRecord.seedNumber,
-      varietyName: currentSowingRecord.varietyName,
-      sowingCount: values.sowingCount || 0,
-      planNumber: values.planNumber || '',
-      createTime: new Date().toISOString(),
-    };
+    try {
+      // 创建新的播种记录
+      const newSowingRecord = {
+        id: `SW-${Date.now()}`,
+        code: values.code,
+        seedNumber: currentSowingRecord.seedNumber || '',
+        varietyName: currentSowingRecord.varietyName || '',
+        sowingCount: values.sowingCount || 0,
+        planNumber: values.planNumber || '',
+        createTime: new Date().toISOString(),
+      };
 
-    // 从localStorage获取现有记录
-    const existingRecords = localStorage.getItem('sowingRecords');
-    const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
+      console.log('Creating new sowing record:', newSowingRecord);
 
-    // 添加新记录到数组开头，保持最新记录在前
-    allRecords.unshift(newSowingRecord);
+      // 从localStorage获取现有记录
+      const existingRecords = localStorage.getItem('sowingRecords');
+      const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
 
-    // 更新 localStorage
-    localStorage.setItem('sowingRecords', JSON.stringify(allRecords));
+      // 添加新记录到数组开头，保持最新记录在前
+      allRecords.unshift(newSowingRecord);
 
-    // 更新当前显示的播种列表
-    setSowingList(allRecords);
+      // 更新 localStorage
+      localStorage.setItem('sowingRecords', JSON.stringify(allRecords));
 
-    message.success('已添加到播种表');
+      // 只显示与当前品种相关的记录
+      const filteredRecords = allRecords.filter((item: any) => 
+        item.seedNumber === currentSowingRecord.seedNumber && 
+        item.varietyName === currentSowingRecord.varietyName
+      );
 
-    // 清空表单
-    form.resetFields();
+      // 更新当前显示的播种列表
+      setSowingList(filteredRecords);
+
+      // 创建考种记载表记录
+      const newExamRecord = {
+        key: mockData.length + Math.random(),
+        photo: currentSowingRecord.photo1 || '',
+        photo1: currentSowingRecord.photo1 || '',
+        photo2: currentSowingRecord.photo2 || '',
+        varietyName: currentSowingRecord.varietyName || '',
+        type: currentSowingRecord.type || '',
+        introductionYear: new Date().getFullYear().toString(),
+        source: '播种记录',
+        breedingType: currentSowingRecord.breedingType || 'regular',
+        seedNumber: values.code,
+        plantingYear: new Date().getFullYear().toString(),
+        resistance: currentSowingRecord.resistance || '',
+        fruitCharacteristics: '',
+        floweringPeriod: '',
+        fruitCount: 0,
+        yield: 0,
+        fruitShape: '',
+        skinColor: '',
+        fleshColor: '',
+        singleFruitWeight: 0,
+        fleshThickness: 0,
+        sugarContent: 0,
+        texture: '',
+        overallTaste: '',
+        combiningAbility: '',
+        hybridization: ''
+      };
+
+      console.log('Creating new exam record:', newExamRecord);
+
+      // 添加到考种记载表
+      mockData.push(newExamRecord);
+
+      message.success('已添加到播种表和考种记载表');
+
+      // 刷新表格数据
+      if (actionRef.current) {
+        actionRef.current.reload();
+      }
+
+      // 重置表单字段，但保留当前品种信息
+      form.setFieldsValue({
+        code: `TZ-${currentSowingRecord.key || 1}`,
+        seedNumber: currentSowingRecord.seedNumber || '',
+        varietyName: currentSowingRecord.varietyName || '',
+        sowingCount: 0,
+        planNumber: '',
+      });
+    } catch (error) {
+      console.error('添加播种记录失败:', error);
+      message.error('添加失败，请重试');
+    }
   };
 
   // 更新播种弹窗的底部按钮
@@ -452,7 +522,7 @@ const TableList: React.FC = () => {
       icon={<ExportOutlined />}
       onClick={handleGenerateReport}
     >
-      生成考种记载表
+      生成播种计划表
     </Button>
   ];
 
@@ -731,6 +801,23 @@ const TableList: React.FC = () => {
     document.body.removeChild(link);
   };
 
+  const handleDeleteSowingRecord = (recordId: string) => {
+    // 从localStorage获取现有记录
+    const existingRecords = localStorage.getItem('sowingRecords');
+    const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
+
+    // 过滤掉要删除的记录
+    const updatedRecords = allRecords.filter((record: any) => record.id !== recordId);
+
+    // 更新localStorage
+    localStorage.setItem('sowingRecords', JSON.stringify(updatedRecords));
+
+    // 更新当前显示的播种列表
+    setSowingList(updatedRecords);
+
+    message.success('删除成功');
+  };
+
   const sowingColumns = [
     {
       title: '种植编号',
@@ -780,12 +867,22 @@ const TableList: React.FC = () => {
             </Popconfirm>
           </span>
         ) : (
-          <Typography.Link
-            disabled={editingKey !== ''}
-            onClick={() => handleEdit(record)}
-          >
-            编辑
-          </Typography.Link>
+          <Space>
+            <Typography.Link
+              disabled={editingKey !== ''}
+              onClick={() => handleEdit(record)}
+            >
+              编辑
+            </Typography.Link>
+            <Popconfirm
+              title="确定要删除这条记录吗?"
+              onConfirm={() => handleDeleteSowingRecord(record.id)}
+            >
+              <Typography.Link type="danger">
+                删除
+              </Typography.Link>
+            </Popconfirm>
+          </Space>
         );
       },
     },
@@ -1057,7 +1154,7 @@ const TableList: React.FC = () => {
       dataIndex: 'hybridization',
       valueType: 'text',
       render: (_, record) => {
-        return (
+          return (
           <Space>
             {record.hybridization && (
               <>
@@ -1619,84 +1716,79 @@ const TableList: React.FC = () => {
           <span style={{ fontSize: '18px', fontWeight: 500 }}>种质资源播种表</span>
         </div>}
         open={sowingModalOpen}
-        onCancel={() => setSowingModalOpen(false)}
+        onCancel={() => {
+          setSowingModalOpen(false);
+          form.resetFields();
+        }}
         footer={sowingModalFooter}
         width={900}
         bodyStyle={{ padding: '24px', maxHeight: '80vh', overflow: 'auto' }}
       >
         <div style={{ background: '#fafafa', padding: '24px', borderRadius: '8px', marginBottom: '24px' }}>
-          <ModalForm
-            title={false}
-            submitter={{
-              searchConfig: {
-                submitText: '添加到播种表',
-              },
-              render: (props, dom) => (
-                <div style={{ textAlign: 'right', marginTop: '24px' }}>
-                  {dom}
-                </div>
-              ),
-            }}
+          <Form
+            form={form}
+            layout="vertical"
             onFinish={handleSowingSubmit}
-            initialValues={{
-              code: `TZ-${currentSowingRecord?.key || 1}`,
-              seedNumber: currentSowingRecord?.seedNumber || '',
-              varietyName: currentSowingRecord?.varietyName || '',
-              sowingCount: 0,
-              planNumber: '',
-            }}
           >
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <ProFormText
+              <Form.Item
                 label="种植编号"
                 name="code"
                 rules={[{ required: true, message: '请输入种植编号' }]}
-                placeholder="请输入种植编号"
-                fieldProps={{
-                  size: 'large',
-                }}
-              />
-              <ProFormText
+              >
+                <Input size="large" placeholder="请输入种植编号" />
+              </Form.Item>
+              <Form.Item
                 label="编号"
                 name="seedNumber"
-                disabled
-                initialValue={currentSowingRecord?.seedNumber}
-                fieldProps={{
-                  size: 'large',
-                }}
-              />
-              <ProFormText
+              >
+                <Input size="large" disabled />
+              </Form.Item>
+              <Form.Item
                 label="品种名称"
                 name="varietyName"
-                disabled
-                initialValue={currentSowingRecord?.varietyName}
-                fieldProps={{
-                  size: 'large',
-                }}
-              />
-              <ProFormDigit
+              >
+                <Input size="large" disabled />
+              </Form.Item>
+              <Form.Item
                 label="播种数量"
                 name="sowingCount"
                 rules={[{ required: true, message: '请输入播种数量' }]}
-                min={1}
-                fieldProps={{
-                  precision: 0,
-                  step: 1,
-                  size: 'large',
-                }}
-                placeholder="请输入播种数量"
-              />
-              <ProFormText
+              >
+                <InputNumber
+                  size="large"
+                  min={1}
+                  precision={0}
+                  style={{ width: '100%' }}
+                  placeholder="请输入播种数量"
+                />
+              </Form.Item>
+              <Form.Item
                 label="计划编号"
                 name="planNumber"
                 rules={[{ required: true, message: '请输入计划编号' }]}
-                placeholder="请输入计划编号"
-                fieldProps={{
-                  size: 'large',
-                }}
-              />
+              >
+                <Input size="large" placeholder="请输入计划编号" />
+              </Form.Item>
             </div>
-          </ModalForm>
+            <Form.Item style={{ marginTop: '24px', textAlign: 'right' }}>
+              <Button 
+                type="primary" 
+                htmlType="submit"
+                onClick={() => {
+                  form.validateFields()
+                    .then(values => {
+                      handleSowingSubmit(values);
+                    })
+                    .catch(info => {
+                      console.log('Validate Failed:', info);
+                    });
+                }}
+              >
+                添加到播种表
+              </Button>
+            </Form.Item>
+          </Form>
         </div>
 
         <div style={{ background: '#fff', borderRadius: '8px', padding: '16px' }}>
@@ -1710,25 +1802,10 @@ const TableList: React.FC = () => {
               }}
               bordered
               dataSource={sowingList}
-              columns={sowingColumns.map(col => {
-                if (!col.editable) {
-                  return col;
-                }
-                return {
-                  ...col,
-                  onCell: (record: SowingRecord) => ({
-                    record,
-                    inputType: col.inputType,
-                    dataIndex: col.dataIndex,
-                    title: col.title,
-                    editing: isEditing(record),
-                  }),
-                };
-              })}
+              columns={sowingColumns}
               rowKey="id"
               pagination={false}
               scroll={{ y: 300 }}
-              style={{ marginBottom: '24px' }}
             />
           </Form>
         </div>

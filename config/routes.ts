@@ -63,14 +63,55 @@ export default [
         component: './SavedSeeds',
       },
       {
-        name: '考种记载表',
+        name: '播种计划表',
         icon: 'fileSearch',
         path: '/germplasm/sowing-records',
         component: './SowingRecords',
       },
     ],
   },
-
+  {
+    name: '引种记录',
+    icon: 'table',
+    path: '/introduction',
+    routes: [
+      {
+        name: '引种管理',
+        icon: 'import',
+        path: '/introduction/list',
+        component: './Introduction',
+      },
+      {
+        name: '播种记录',
+        icon: 'seedling',
+        path: '/introduction/sowing',
+        component: './Introduction/Sowing',
+      },
+      {
+        name: '考种记录',
+        icon: 'fileSearch',
+        path: '/introduction/test',
+        component: './Introduction/Test',
+      },
+    ],
+  },
+  {
+    name: '自交系纯化',
+    icon: 'experiment',
+    path: '/purification',
+    routes: [
+      {
+        name: '自交系纯化',
+        path: '/purification',
+        component: './Purification',
+      },
+      {
+        name: '播种计划',
+        path: '/purification/sowing',
+        component: './Purification/Sowing',
+      },
+    ],
+  },
   {
     name: 'AI智能问答',
     icon: 'robot',
