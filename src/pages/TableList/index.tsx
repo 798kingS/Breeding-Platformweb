@@ -1,5 +1,5 @@
-import { removeRule, rule, updateRule, importExcel } from '@/services/ant-design-pro/api';
-import { mockData } from '@/services/ant-design-pro/api';
+import { removeRule, rule, updateRule, importExcel } from '@/services/Breeding Platform/api';
+import { mockData } from '@/services/Breeding Platform/api';
 import { PlusOutlined, ImportOutlined, UploadOutlined, ExportOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns, ProDescriptionsItemProps } from '@ant-design/pro-components';
 import {

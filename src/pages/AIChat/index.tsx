@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { queryAI } from '@/services/ant-design-pro/api';
+import { queryAI } from '@/services/Breeding Platform/api';
 import 'github-markdown-css/github-markdown.css';
 import styles from './index.less';
 
