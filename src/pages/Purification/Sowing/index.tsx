@@ -93,6 +93,47 @@ const SowingList: React.FC = () => {
     });
   };
 
+  // 处理生成考种记载表
+  const handleGenerateRecord = (record: SowingRecord) => {
+    // 更新数据源中的状态
+    const newDataSource = dataSource.map(item => {
+      if (item.key === record.key) {
+        return {
+          ...item,
+          status: '未完成'  // 先设置为未完成
+        };
+      }
+      return item;
+    });
+    
+    // 立即更新状态
+    setDataSource(newDataSource);
+    
+    // 使用setTimeout确保状态已更新
+    setTimeout(() => {
+      const updatedDataSource = newDataSource.map(item => {
+        if (item.key === record.key) {
+          return {
+            ...item,
+            status: '已完成'
+          };
+        }
+        return item;
+      });
+      
+      // 更新状态并保存到localStorage
+      setDataSource(updatedDataSource);
+      localStorage.setItem('purificationSowingRecords', JSON.stringify(updatedDataSource));
+      
+      // 如果需要刷新表格
+      if (actionRef.current) {
+        actionRef.current.reload();
+      }
+      
+      message.success('已生成考种记载表');
+    }, 100);
+  };
+
   const columns: ProColumns<SowingRecord>[] = [
     {
       title: '种植编号',
@@ -147,6 +188,14 @@ const SowingList: React.FC = () => {
       title: '操作',
       valueType: 'option',
       render: (_, record) => [
+        <Button
+          key="generate"
+          type="link"
+          onClick={() => handleGenerateRecord(record)}
+          disabled={record.status === '已完成'}
+        >
+          生成考种记载表
+        </Button>,
         <Button
           key="delete"
           type="link"
