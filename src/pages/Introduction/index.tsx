@@ -1,3 +1,4 @@
+//引种页面
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { useRef, useState, useEffect } from 'react';
@@ -190,22 +191,30 @@ const IntroductionList: React.FC = () => {
   const handleGenerateTestRecord = async () => {
     try {
       const values = await form.validateFields();
-      const sowingRecord = {
-        ...values,
-        key: Date.now(),
-        sowingTime: new Date().toISOString().split('T')[0],
-        status: '未生成考种记录',
-      };
+      const sowingAmount = values.sowingAmount || 1;
+      
+      // 创建多个播种记录，数量等于用户输入的播种数量
+      const sowingRecords = [];
+      for (let i = 0; i < sowingAmount; i++) {
+        const sowingRecord = {
+          ...values,
+          key: Date.now() + i,
+          sowingTime: new Date().toISOString().split('T')[0],
+          status: '未生成考种记录',
+          recordIndex: i + 1, // 添加记录索引，用于区分同一种子的不同记录
+        };
+        sowingRecords.push(sowingRecord);
+      }
 
       // 保存播种记录到 localStorage
       const savedSowingRecords = localStorage.getItem('sowingRecords') || '[]';
-      const sowingRecords = JSON.parse(savedSowingRecords);
-      sowingRecords.push(sowingRecord);
-      localStorage.setItem('sowingRecords', JSON.stringify(sowingRecords));
+      const existingSowingRecords = JSON.parse(savedSowingRecords);
+      const updatedSowingRecords = [...existingSowingRecords, ...sowingRecords];
+      localStorage.setItem('sowingRecords', JSON.stringify(updatedSowingRecords));
 
       // 跳转到播种记录页面
-      history.push('/introduction/sowing', { sowingRecord });
-      message.success('播种记录已保存！');
+      history.push('/introduction/sowing', { sowingRecords });
+      message.success(`已成功生成${sowingAmount}条播种记录！`);
       setSowingModalVisible(false);
       form.resetFields();
     } catch (error) {
@@ -454,7 +463,7 @@ const IntroductionList: React.FC = () => {
             取消
           </Button>,
           <Button key="submit" type="primary" onClick={() => form.submit()}>
-            生成考种记载表
+            生成播种表
           </Button>,
         ]}
         width={600}

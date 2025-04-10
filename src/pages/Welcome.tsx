@@ -394,7 +394,7 @@ const Welcome: React.FC = () => {
               boxShadow: '0 8px 30px rgba(0, 0, 0, 0.15)'
             }}>
               <video
-                style={{
+      style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
@@ -408,7 +408,7 @@ const Welcome: React.FC = () => {
               >
                 您的浏览器不支持视频播放
               </video>
-            </div>
+        </div>
           </Col>
           <Col xs={24} md={8}>
             <div style={{ 
@@ -448,12 +448,12 @@ const Welcome: React.FC = () => {
                 type="primary" 
                 icon={<PlayCircleOutlined />}
                 size="large"
-                style={{ 
+          style={{
                   background: THEME_COLORS.gradients[0],
                   border: 'none',
                   height: '48px',
                   borderRadius: '24px',
-                  fontSize: '16px',
+            fontSize: '16px',
                   boxShadow: '0 4px 15px rgba(46, 125, 50, 0.2)'
                 }}
               >
@@ -576,14 +576,14 @@ const Welcome: React.FC = () => {
                   style={{ height: '100%' }}
                   opts={{ renderer: 'svg' }}
                 />
-              </div>
+      </div>
             </Card>
           </Col>
         </Row>
 
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col span={12}>
-            <Card 
+      <Card
               style={chartCardStyle}
               title={<span style={{ 
                 background: THEME_COLORS.gradients[0],
@@ -662,7 +662,7 @@ const Welcome: React.FC = () => {
                     <Bar dataKey="success" name="成功数量" fill={CHART_COLORS.secondary} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+          </div>
             </Card>
           </Col>
         </Row>
@@ -928,7 +928,7 @@ const Welcome: React.FC = () => {
                 5. 报表导出：可以导出各类统计报表，方便数据归档和分析。
               </Paragraph>
             </Card>
-          </div>
+        </div>
         </Space>
       </Card>
     </PageContainer>

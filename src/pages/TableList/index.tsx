@@ -18,6 +18,7 @@ import { Button, Drawer, message, Upload, Modal, Table, Space, Input, InputNumbe
 import React, { useRef, useState, useEffect } from 'react';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
+import { generateMockData } from '@/services/Breeding Platform/mockData';
 
 /**
  * @en-US Add node
@@ -991,19 +992,11 @@ const TableList: React.FC = () => {
       width: 80,
       search: false,
       render: (_, __, index, action) => {
-        // 获取当前页码和每页条数
         const current = action?.pageInfo?.current || 1;
         const pageSize = action?.pageInfo?.pageSize || 10;
-        // 计算真实序号
         return ((current - 1) * pageSize) + index + 1;
       },
       sorter: (a, b) => (a.key || 0) - (b.key || 0),
-    },
-    {
-      title: '照片',
-      dataIndex: 'photo',
-      valueType: 'image',
-      search: false,
     },
     {
       title: '品种名称',
@@ -1048,44 +1041,6 @@ const TableList: React.FC = () => {
       valueType: 'text',
     },
     {
-      title: '种植年份',
-      dataIndex: 'plantingYear',
-      valueType: 'dateYear',
-      sorter: (a, b) => (a.plantingYear || '').localeCompare(b.plantingYear || ''),
-    },
-    {
-      title: '抗性',
-      dataIndex: 'resistance',
-      valueType: 'text',
-    },
-    {
-      title: '结果特征',
-      dataIndex: 'fruitCharacteristics',
-      valueType: 'text',
-    },
-    {
-      title: '开花期/果实发育期',
-      dataIndex: 'floweringPeriod',
-      valueType: 'text',
-    },
-    {
-      title: '留果个数',
-      dataIndex: 'fruitCount',
-      valueType: 'digit',
-      search: {
-        transform: (value) => ({ fruitCountMin: value[0], fruitCountMax: value[1] }),
-      },
-    },
-    {
-      title: '产量',
-      dataIndex: 'yield',
-      valueType: 'digit',
-      search: {
-        transform: (value) => ({ yieldMin: value[0], yieldMax: value[1] }),
-      },
-      sorter: (a, b) => (a.yield || 0) - (b.yield || 0),
-    },
-    {
       title: '果型',
       dataIndex: 'fruitShape',
       valueType: 'text',
@@ -1096,58 +1051,9 @@ const TableList: React.FC = () => {
       valueType: 'text',
     },
     {
-      title: '肉色',
-      dataIndex: 'fleshColor',
-      valueType: 'text',
-    },
-    {
-      title: '单果重',
-      dataIndex: 'singleFruitWeight',
-      valueType: 'digit',
-      fieldProps: {
-        suffix: 'g',
-      },
-      search: {
-        transform: (value) => ({ weightMin: value[0], weightMax: value[1] }),
-      },
-    },
-    {
-      title: '肉厚',
-      dataIndex: 'fleshThickness',
-      valueType: 'digit',
-      fieldProps: {
-        suffix: 'mm',
-      },
-      search: {
-        transform: (value) => ({ thicknessMin: value[0], thicknessMax: value[1] }),
-      },
-    },
-    {
-      title: '糖度',
-      dataIndex: 'sugarContent',
-      valueType: 'digit',
-      fieldProps: {
-        suffix: '°Brix',
-      },
-      search: {
-        transform: (value) => ({ sugarMin: value[0], sugarMax: value[1] }),
-      },
-    },
-    {
       title: '质地',
       dataIndex: 'texture',
       valueType: 'text',
-    },
-    {
-      title: '总体口感',
-      dataIndex: 'overallTaste',
-      valueType: 'text',
-    },
-    {
-      title: '配合力',
-      dataIndex: 'combiningAbility',
-      valueType: 'text',
-      sorter: (a, b) => (a.combiningAbility || '').localeCompare(b.combiningAbility || ''),
     },
     {
       title: '杂交情况',
@@ -1183,8 +1089,18 @@ const TableList: React.FC = () => {
       title: '操作',
       dataIndex: 'option',
       valueType: 'option',
-      width: 200,
+      width: 280,
       render: (_, record) => [
+        <Button
+          key="view"
+          type="link"
+          onClick={() => {
+            setCurrentRow(record);
+            setShowDetail(true);
+          }}
+        >
+          查看详情
+        </Button>,
         <Button
           key="sowing"
           type="primary"
@@ -1213,6 +1129,8 @@ const TableList: React.FC = () => {
       actionRef.current.reload();
     }
   };
+
+  const [dataSource, setDataSource] = useState<API.RuleListItem[]>(generateMockData());
 
   return (
     <PageContainer>
@@ -1545,7 +1463,7 @@ const TableList: React.FC = () => {
       />
 
       <Drawer
-        width={600}
+        width={800}
         open={showDetail}
         onClose={() => {
           setCurrentRow(undefined);
@@ -1553,18 +1471,138 @@ const TableList: React.FC = () => {
         }}
         closable={false}
       >
-        {currentRow?.name && (
+        {currentRow && (
+          <>
+            <div style={{ marginBottom: 24 }}>
+              <h4 style={{ marginBottom: 16 }}>照片</h4>
+              <div style={{ 
+                width: '100%', 
+                display: 'flex', 
+                justifyContent: 'center',
+                border: '1px solid #f0f0f0',
+                borderRadius: '4px',
+                padding: '16px',
+                backgroundColor: '#fafafa'
+              }}>
+                <img 
+                  src={currentRow.photo} 
+                  alt={currentRow.varietyName} 
+                  style={{ 
+                    maxWidth: '100%',
+                    maxHeight: '400px',
+                    objectFit: 'contain'
+                  }}
+                />
+              </div>
+            </div>
           <ProDescriptions<API.RuleListItem>
             column={2}
-            title={currentRow?.name}
+              title={currentRow?.varietyName}
             request={async () => ({
               data: currentRow || {},
             })}
             params={{
-              id: currentRow?.name,
-            }}
-            columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}
-          />
+                id: currentRow?.varietyName,
+              }}
+              columns={[
+                {
+                  title: '品种名称',
+                  dataIndex: 'varietyName',
+                },
+                {
+                  title: '类型',
+                  dataIndex: 'type',
+                },
+                {
+                  title: '引种年份',
+                  dataIndex: 'introductionYear',
+                },
+                {
+                  title: '来源',
+                  dataIndex: 'source',
+                },
+                {
+                  title: '常规种/纯化',
+                  dataIndex: 'breedingType',
+                  valueEnum: {
+                    regular: { text: '常规种' },
+                    pure: { text: '纯化' },
+                  },
+                },
+                {
+                  title: '留种编号',
+                  dataIndex: 'seedNumber',
+                },
+                {
+                  title: '种植年份',
+                  dataIndex: 'plantingYear',
+                },
+                {
+                  title: '抗性',
+                  dataIndex: 'resistance',
+                },
+                {
+                  title: '结果特征',
+                  dataIndex: 'fruitCharacteristics',
+                },
+                {
+                  title: '开花期/果实发育期',
+                  dataIndex: 'floweringPeriod',
+                },
+                {
+                  title: '留果个数',
+                  dataIndex: 'fruitCount',
+                },
+                {
+                  title: '产量',
+                  dataIndex: 'yield',
+                },
+                {
+                  title: '果型',
+                  dataIndex: 'fruitShape',
+                },
+                {
+                  title: '皮色',
+                  dataIndex: 'skinColor',
+                },
+                {
+                  title: '肉色',
+                  dataIndex: 'fleshColor',
+                },
+                {
+                  title: '单果重',
+                  dataIndex: 'singleFruitWeight',
+                  render: (val) => `${val}g`,
+                },
+                {
+                  title: '肉厚',
+                  dataIndex: 'fleshThickness',
+                  render: (val) => `${val}mm`,
+                },
+                {
+                  title: '糖度',
+                  dataIndex: 'sugarContent',
+                  render: (val) => `${val}°Brix`,
+                },
+                {
+                  title: '质地',
+                  dataIndex: 'texture',
+                },
+                {
+                  title: '总体口感',
+                  dataIndex: 'overallTaste',
+                },
+                {
+                  title: '配合力',
+                  dataIndex: 'combiningAbility',
+                },
+                {
+                  title: '杂交情况',
+                  dataIndex: 'hybridization',
+                }
+              ]}
+            />
+          </>
         )}
       </Drawer>
 

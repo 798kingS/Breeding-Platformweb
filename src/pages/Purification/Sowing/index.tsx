@@ -7,6 +7,7 @@ import { DeleteOutlined } from '@ant-design/icons';
 
 interface LocationState {
   sowingRecord?: SowingRecord;
+  sowingRecords?: SowingRecord[];
 }
 
 type SowingRecord = {
@@ -25,11 +26,12 @@ type SowingRecord = {
   // 播种计划字段
   planCode: string;      // 计划编号
   status: string;        // 状态：未完成/已完成
+  recordIndex?: number;  // 记录索引，用于区分同一种子的不同记录
 };
 
 const SowingList: React.FC = () => {
   const actionRef = useRef<ActionType>();
-  const location = useLocation<LocationState>();
+  const location = useLocation();
   const [dataSource, setDataSource] = useState<SowingRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
@@ -43,15 +45,15 @@ const SowingList: React.FC = () => {
 
   // 如果有新的播种记录，添加到数据源
   useEffect(() => {
-    const { sowingRecord } = location.state || {};
-    if (sowingRecord && !dataSource.some(item => item.key === sowingRecord.key)) {
-      const newRecord = {
-        ...sowingRecord,
-        key: Date.now(),
-        planCode: `P${Date.now()}`,
-        status: '未完成',
-      };
-      setDataSource(prev => [...prev, newRecord]);
+    const state = location.state as LocationState;
+    const { sowingRecords } = state || {};
+    
+    if (sowingRecords && sowingRecords.length > 0) {
+      // 直接使用 localStorage 中的数据，因为它已经包含了最新的记录
+      const savedData = localStorage.getItem('purificationSowingRecords');
+      if (savedData) {
+        setDataSource(JSON.parse(savedData));
+      }
     }
   }, [location.state]);
 
@@ -175,6 +177,11 @@ const SowingList: React.FC = () => {
     {
       title: '计划编号',
       dataIndex: 'planCode',
+    },
+    {
+      title: '记录索引',
+      dataIndex: 'recordIndex',
+      hideInTable: true,
     },
     {
       title: '状态',

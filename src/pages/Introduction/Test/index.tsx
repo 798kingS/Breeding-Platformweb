@@ -7,6 +7,7 @@ import { DeleteOutlined } from '@ant-design/icons';
 
 interface LocationState {
   testRecord?: TestRecord;
+  isNewRecord?: boolean;
 }
 
 type TestRecord = {
@@ -34,24 +35,39 @@ type TestRecord = {
 const TestList: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
-  const location = useLocation<LocationState>();
+  const location = useLocation();
   const [dataSource, setDataSource] = useState<TestRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  // 从 localStorage 获取数据
+  // 从 localStorage 获取数据并处理新记录
   useEffect(() => {
+    const state = location.state as LocationState;
+    const { testRecord, isNewRecord } = state || {};
+    
+    // 从 localStorage 获取现有数据
     const savedData = localStorage.getItem('testRecords');
-    if (savedData) {
-      setDataSource(JSON.parse(savedData));
+    const existingRecords: TestRecord[] = savedData ? JSON.parse(savedData) : [];
+    
+    if (testRecord && isNewRecord) {
+      // 检查是否已存在相同种植编号的记录
+      const existingIndex = existingRecords.findIndex(
+        item => item.plantingCode === testRecord.plantingCode
+      );
+      
+      if (existingIndex >= 0) {
+        // 如果已存在，则更新该记录
+        existingRecords[existingIndex] = testRecord;
+      } else {
+        // 如果不存在，则添加新记录
+        existingRecords.push(testRecord);
+      }
+      
+      // 保存更新后的记录到 localStorage
+      localStorage.setItem('testRecords', JSON.stringify(existingRecords));
     }
-  }, []);
-
-  // 如果有新的考种记录，添加到数据源
-  useEffect(() => {
-    const { testRecord } = location.state || {};
-    if (testRecord && !dataSource.some(item => item.key === testRecord.key)) {
-      setDataSource(prev => [...prev, { ...testRecord, key: Date.now() }]);
-    }
+    
+    // 更新数据源
+    setDataSource(existingRecords);
   }, [location.state]);
 
   // 数据变化时保存到 localStorage

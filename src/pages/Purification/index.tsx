@@ -1,10 +1,12 @@
+//自交系纯化页面
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { useRef, useState, useEffect } from 'react';
 import { useLocation, history } from '@umijs/max';
-import { Button, Modal, message, Upload } from 'antd';
+import { Button, Modal, message, Upload, Form, Input, InputNumber, DatePicker } from 'antd';
 import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
+import moment from 'moment';
 
 interface LocationState {
   purificationRecord?: PurificationRecord;
@@ -27,9 +29,12 @@ type PurificationRecord = {
 
 const PurificationList: React.FC = () => {
   const actionRef = useRef<ActionType>();
-  const location = useLocation<LocationState>();
+  const location = useLocation();
   const [dataSource, setDataSource] = useState<PurificationRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [sowingModalVisible, setSowingModalVisible] = useState(false);
+  const [currentRecord, setCurrentRecord] = useState<PurificationRecord | null>(null);
+  const [form] = Form.useForm();
 
   // 从 localStorage 获取数据
   useEffect(() => {
@@ -41,7 +46,8 @@ const PurificationList: React.FC = () => {
 
   // 如果有新的自交系纯化记录，添加到数据源
   useEffect(() => {
-    const { purificationRecord } = location.state || {};
+    const state = location.state as LocationState;
+    const { purificationRecord } = state || {};
     if (purificationRecord && !dataSource.some(item => item.key === purificationRecord.key)) {
       setDataSource(prev => [...prev, purificationRecord]);
     }
@@ -87,7 +93,64 @@ const PurificationList: React.FC = () => {
 
   // 处理播种
   const handleSowing = (record: PurificationRecord) => {
-    history.push('/purification/sowing', { sowingRecord: record });
+    setCurrentRecord(record);
+    form.setFieldsValue({
+      ...record,
+      sowingTime: record.sowingTime ? moment(record.sowingTime) : moment(),
+    });
+    setSowingModalVisible(true);
+  };
+
+  // 处理播种确认
+  const handleSowingConfirm = async () => {
+    try {
+      const values = await form.validateFields();
+      const sowingAmount = values.sowingAmount || 1;
+      
+      if (!currentRecord) {
+        message.error('未找到当前记录');
+        return;
+      }
+
+      // 从 localStorage 获取现有记录
+      const savedSowingRecords = localStorage.getItem('purificationSowingRecords') || '[]';
+      const existingSowingRecords = JSON.parse(savedSowingRecords);
+
+      // 检查是否已存在相同种植编号的记录
+      const hasExistingRecord = existingSowingRecords.some(
+        (record: any) => record.plantingCode === currentRecord.plantingCode
+      );
+
+      if (hasExistingRecord) {
+        message.warning('该记录已存在播种计划中');
+        setSowingModalVisible(false);
+        form.resetFields();
+        return;
+      }
+
+      // 创建播种记录
+      const baseTime = Date.now();
+      const sowingRecords = Array(sowingAmount).fill(null).map((_, i) => ({
+        ...currentRecord,
+        key: baseTime + i,
+        sowingAmount: 1,
+        planCode: `P${baseTime + i}`,
+        status: '未完成',
+        sowingTime: values.sowingTime.format('YYYY-MM-DD'),
+      }));
+
+      // 保存到 localStorage
+      const updatedSowingRecords = [...existingSowingRecords, ...sowingRecords];
+      localStorage.setItem('purificationSowingRecords', JSON.stringify(updatedSowingRecords));
+
+      // 跳转到播种计划页面
+      history.push('/purification/sowing', { sowingRecords });
+      message.success(`已成功生成${sowingAmount}条播种记录！`);
+      setSowingModalVisible(false);
+      form.resetFields();
+    } catch (error) {
+      message.error('表单验证失败');
+    }
   };
 
   // 处理Excel导入
@@ -227,6 +290,93 @@ const PurificationList: React.FC = () => {
           showTotal: (total) => `共 ${total} 条记录`,
         }}
       />
+
+      {/* 播种弹窗 */}
+      <Modal
+        title="播种"
+        visible={sowingModalVisible}
+        onCancel={() => {
+          setSowingModalVisible(false);
+          form.resetFields();
+        }}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setSowingModalVisible(false);
+            form.resetFields();
+          }}>
+            取消
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleSowingConfirm}>
+            播种
+          </Button>,
+        ]}
+        width={600}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            sowingAmount: 1,
+          }}
+        >
+          <Form.Item
+            name="plantingCode"
+            label="种植编号"
+          >
+            <Input disabled />
+          </Form.Item>
+          <Form.Item
+            name="code"
+            label="编号"
+          >
+            <Input disabled />
+          </Form.Item>
+          <Form.Item
+            name="name"
+            label="品种名称"
+          >
+            <Input disabled />
+          </Form.Item>
+          <Form.Item
+            name="method"
+            label="引种方式"
+          >
+            <Input disabled />
+          </Form.Item>
+          <Form.Item
+            name="type"
+            label="品种类型"
+          >
+            <Input disabled />
+          </Form.Item>
+          <Form.Item
+            name="isRegular"
+            label="是否常规"
+          >
+            <Input disabled />
+          </Form.Item>
+          <Form.Item
+            name="generation"
+            label="世代"
+          >
+            <Input disabled />
+          </Form.Item>
+          <Form.Item
+            name="sowingAmount"
+            label="播种数量"
+            rules={[{ required: true, message: '请输入播种数量' }]}
+          >
+            <InputNumber min={1} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item
+            name="sowingTime"
+            label="播种时间"
+            rules={[{ required: true, message: '请选择播种时间' }]}
+          >
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </PageContainer>
   );
 };

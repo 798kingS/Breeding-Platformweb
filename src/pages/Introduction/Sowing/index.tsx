@@ -27,9 +27,29 @@ type SowingRecord = {
   status: string;        // 状态：未生成考种记录/已生成考种记录
 };
 
+// 考种记录类型定义
+type TestRecord = {
+  key: number;
+  // 引种记录字段
+  code: string;           // 编号
+  name: string;          // 引种名称
+  method: string;       // 引种方式
+  type: string;         // 品种类型
+  isRegular: string;    // 是否常规
+  generation: string;   // 世代
+  introductionTime: string; // 引种时间
+  // 播种记录字段
+  plantingCode: string;    // 种植编号
+  sowingAmount: number;   // 播种数量
+  planCode: string;      // 计划编号
+  sowingTime: string;    // 播种时间
+  // 考种记录字段
+  testTime: string;      // 考种时间
+};
+
 const SowingList: React.FC = () => {
   const actionRef = useRef<ActionType>();
-  const location = useLocation<LocationState>();
+  const location = useLocation();
   const [dataSource, setDataSource] = useState<SowingRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
@@ -43,7 +63,8 @@ const SowingList: React.FC = () => {
 
   // 如果有新的播种记录，添加到数据源
   useEffect(() => {
-    const { sowingRecord } = location.state || {};
+    const state = location.state as LocationState;
+    const { sowingRecord } = state || {};
     if (sowingRecord && !dataSource.some(item => item.key === sowingRecord.key)) {
       setDataSource(prev => [...prev, sowingRecord]);
     }
@@ -88,28 +109,66 @@ const SowingList: React.FC = () => {
   };
 
   const handleGenerateTestRecord = (record: SowingRecord) => {
+    // 检查是否已经生成过考种记录
+    if (record.status === 'Success') {
+      message.warning('该记录已生成考种记载表！');
+      return;
+    }
+
     // 更新状态
     const newDataSource = dataSource.map(item => {
       if (item.key === record.key) {
-        return { ...item, status: '已生成考种记录' };
+        return { ...item, status: 'Success' };
       }
       return item;
     });
     setDataSource(newDataSource);
+    localStorage.setItem('sowingRecords', JSON.stringify(newDataSource));
 
+    // 创建考种记录，只包含当前行的信息
     const testRecord = {
-      ...record,
+      key: Date.now(), // 生成新的唯一key
+      // 引种记录字段
+      code: record.code,
+      name: record.name,
+      method: record.method,
+      type: record.type,
+      isRegular: record.isRegular,
+      generation: record.generation,
+      introductionTime: record.introductionTime,
+      // 播种记录字段
+      plantingCode: record.plantingCode,
+      sowingAmount: record.sowingAmount,
+      planCode: record.planCode,
+      sowingTime: record.sowingTime,
+      // 考种记录字段
       testTime: new Date().toISOString().split('T')[0],
     };
     
     // 保存考种记录到 localStorage
     const savedTestRecords = localStorage.getItem('testRecords') || '[]';
     const testRecords = JSON.parse(savedTestRecords);
-    testRecords.push(testRecord);
+    
+    // 检查是否已存在相同种植编号的考种记录
+    const existingRecordIndex = testRecords.findIndex(
+      (item: TestRecord) => item.plantingCode === record.plantingCode
+    );
+    
+    if (existingRecordIndex >= 0) {
+      // 如果已存在，则更新而不是添加
+      testRecords[existingRecordIndex] = testRecord;
+    } else {
+      // 如果不存在，则添加新记录
+      testRecords.push(testRecord);
+    }
+    
     localStorage.setItem('testRecords', JSON.stringify(testRecords));
     
-    // 跳转到考种记录页面
-    history.push('/introduction/test', { testRecord });
+    // 跳转到考种记录页面，并传递新生成的考种记录
+    history.push('/introduction/test', { 
+      testRecord,
+      isNewRecord: true // 添加标记，表示这是一个新生成的记录
+    });
     message.success('考种记载表生成成功！');
   };
 
@@ -165,7 +224,7 @@ const SowingList: React.FC = () => {
       dataIndex: 'status',
       valueEnum: {
         '未生成考种记录': { text: '未生成考种记录', status: 'Default' },
-        '已生成考种记录': { text: '已生成考种记录', status: 'Success' },
+        'Success': { text: '已生成考种记录', status: 'Success' },
       },
     },
     {
