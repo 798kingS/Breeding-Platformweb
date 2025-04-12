@@ -4,17 +4,46 @@ import { ExportOutlined, DeleteOutlined } from '@ant-design/icons';
 import React, { useEffect, useState, useRef } from 'react';
 import type { ActionType } from '@ant-design/pro-components';
 
+interface SowingRecord {
+  key: string;
+  code: string;
+  seedNumber: string;
+  varietyName: string;
+  sowingCount: number;
+  planNumber: string;
+  createTime: string;
+}
+
 const SowingRecords: React.FC = () => {
-  const [sowingList, setSowingList] = useState<any[]>([]);
+  const [sowingList, setSowingList] = useState<SowingRecord[]>([]);
   const actionRef = useRef<ActionType>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  useEffect(() => {
-    // 从localStorage加载播种记录
+  // 加载数据的函数
+  const loadSowingRecords = () => {
     const records = localStorage.getItem('sowingRecords');
     if (records) {
-      setSowingList(JSON.parse(records));
+      try {
+        const parsedRecords = JSON.parse(records);
+        // 过滤掉无效的记录
+        const validRecords = parsedRecords.filter((record: SowingRecord) => 
+          record && 
+          record.code && 
+          record.seedNumber && 
+          record.varietyName
+        );
+        setSowingList(validRecords);
+      } catch (error) {
+        console.error('Error parsing sowing records:', error);
+        setSowingList([]);
+      }
+    } else {
+      setSowingList([]);
     }
+  };
+
+  useEffect(() => {
+    loadSowingRecords();
   }, []);
 
   const handleExport = () => {
@@ -56,30 +85,20 @@ const SowingRecords: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // 处理单个删除
-  const handleDelete = (record: API.RuleListItem) => {
+  const handleDelete = (record: SowingRecord) => {
     Modal.confirm({
       title: '确认删除',
       content: `确定要删除种植编号为 ${record.seedNumber} 的记录吗？`,
       onOk: async () => {
         try {
-          // 从 localStorage 获取现有记录
-          const existingRecords = localStorage.getItem('sowingRecords');
-          if (existingRecords) {
-            const records = JSON.parse(existingRecords);
-            // 过滤掉要删除的记录
-            const newRecords = records.filter((item: any) => item.key !== record.key);
-            // 保存更新后的记录
-            localStorage.setItem('sowingRecords', JSON.stringify(newRecords));
-            
-            message.success('删除成功');
-            // 刷新表格
-            if (actionRef.current) {
-              actionRef.current.reload();
-            }
-          }
+          const newRecords = sowingList.filter(item => item.key !== record.key);
+          localStorage.setItem('sowingRecords', JSON.stringify(newRecords));
+          setSowingList(newRecords);
+          message.success('删除成功');
         } catch (error) {
           message.error('删除失败');
         }
@@ -99,24 +118,13 @@ const SowingRecords: React.FC = () => {
       content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
       onOk: async () => {
         try {
-          // 从 localStorage 获取现有记录
-          const existingRecords = localStorage.getItem('sowingRecords');
-          if (existingRecords) {
-            const records = JSON.parse(existingRecords);
-            // 过滤掉要删除的记录
-            const newRecords = records.filter(
-              (item: any) => !selectedRowKeys.includes(item.key)
-            );
-            // 保存更新后的记录
-            localStorage.setItem('sowingRecords', JSON.stringify(newRecords));
-            
-            setSelectedRowKeys([]);
-            message.success('批量删除成功');
-            // 刷新表格
-            if (actionRef.current) {
-              actionRef.current.reload();
-            }
-          }
+          const newRecords = sowingList.filter(
+            item => !selectedRowKeys.includes(item.key)
+          );
+          localStorage.setItem('sowingRecords', JSON.stringify(newRecords));
+          setSowingList(newRecords);
+          setSelectedRowKeys([]);
+          message.success('批量删除成功');
         } catch (error) {
           message.error('批量删除失败');
         }
@@ -148,12 +156,12 @@ const SowingRecords: React.FC = () => {
     {
       title: '创建时间',
       dataIndex: 'createTime',
-      render: (text: string) => new Date(text).toLocaleString(),
+      render: (text: string) => text ? new Date(text).toLocaleString() : '-',
     },
     {
       title: '操作',
       valueType: 'option',
-      render: (_, record) => [
+      render: (_, record: SowingRecord) => [
         <Button
           key="delete"
           type="link"
@@ -170,16 +178,6 @@ const SowingRecords: React.FC = () => {
     <PageContainer
       header={{
         title: '播种计划表',
-        extra: [
-          <Button
-            key="export"
-            type="primary"
-            icon={<ExportOutlined />}
-            onClick={handleExport}
-          >
-            导出记录
-          </Button>,
-        ],
       }}
     >
       <div style={{ marginBottom: 16 }}>
@@ -196,6 +194,7 @@ const SowingRecords: React.FC = () => {
           icon={<ExportOutlined />}
           onClick={handleExport}
           style={{ marginLeft: 8 }}
+          disabled={sowingList.length === 0}
         >
           导出
         </Button>

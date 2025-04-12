@@ -2,8 +2,8 @@ import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { useRef, useState, useEffect } from 'react';
 import { useLocation } from '@umijs/max';
-import { Button, Modal, message } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
+import { Button, Modal, message, Dropdown, Menu } from 'antd';
+import { DeleteOutlined, ExportOutlined, DownOutlined } from '@ant-design/icons';
 
 interface LocationState {
   sowingRecord?: SowingRecord;
@@ -136,6 +136,142 @@ const SowingList: React.FC = () => {
     }, 100);
   };
 
+  // 处理导出本模块数据
+  const handleExportCurrent = () => {
+    if (dataSource.length === 0) {
+      message.warning('没有数据可导出');
+      return;
+    }
+
+    // 准备导出数据
+    const exportData = dataSource.map(item => ({
+      '种植编号': item.plantingCode,
+      '编号': item.code,
+      '品种名称': item.name,
+      '引种方式': item.method,
+      '品种类型': item.type,
+      '是否常规': item.isRegular,
+      '世代': item.generation,
+      '播种数量': item.sowingAmount,
+      '播种时间': item.sowingTime,
+      '计划编号': item.planCode,
+      '状态': item.status,
+      '来源': '自交系纯化'  // 添加来源标识
+    }));
+
+    // 转换为CSV格式
+    const headers = Object.keys(exportData[0]);
+    const csvContent = [
+      headers.join(','),
+      ...exportData.map(row => 
+        headers.map(header => {
+          const value = row[header];
+          return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+        }).join(',')
+      )
+    ].join('\n');
+
+    // 创建下载链接
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `自交系纯化播种记录_${new Date().toLocaleDateString()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    message.success('导出成功');
+  };
+
+  // 处理全部导出
+  const handleExportAll = (module: string) => {
+    // 这里需要根据选择的模块从localStorage获取相应的数据
+    let exportData: any[] = [];
+    let fileName = '';
+
+    switch (module) {
+      case '种质资源':
+        const germplasmData = localStorage.getItem('germplasmRecords');
+        if (germplasmData) {
+          exportData = JSON.parse(germplasmData).map((item: any) => ({
+            ...item,
+            '来源': '种质资源'
+          }));
+        }
+        fileName = '种质资源记录';
+        break;
+      case '引种模块':
+        const introductionData = localStorage.getItem('introductionRecords');
+        if (introductionData) {
+          exportData = JSON.parse(introductionData).map((item: any) => ({
+            ...item,
+            '来源': '引种模块'
+          }));
+        }
+        fileName = '引种记录';
+        break;
+      case '自交系纯化':
+        exportData = dataSource.map(item => ({
+          ...item,
+          '来源': '自交系纯化'
+        }));
+        fileName = '自交系纯化记录';
+        break;
+      case '杂交组合':
+        const hybridData = localStorage.getItem('hybridRecords');
+        if (hybridData) {
+          exportData = JSON.parse(hybridData).map((item: any) => ({
+            ...item,
+            '来源': '杂交组合'
+          }));
+        }
+        fileName = '杂交组合记录';
+        break;
+    }
+
+    if (exportData.length === 0) {
+      message.warning(`没有${module}的数据可导出`);
+      return;
+    }
+
+    // 转换为CSV格式
+    const headers = Object.keys(exportData[0]);
+    const csvContent = [
+      headers.join(','),
+      ...exportData.map(row => 
+        headers.map(header => {
+          const value = row[header];
+          return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+        }).join(',')
+      )
+    ].join('\n');
+
+    // 创建下载链接
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${fileName}_${new Date().toLocaleDateString()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    message.success('导出成功');
+  };
+
+  // 创建导出菜单
+  const exportMenu = (
+    <Menu onClick={({ key }) => handleExportAll(key)}>
+      <Menu.Item key="种质资源">种质资源</Menu.Item>
+      <Menu.Item key="引种模块">引种模块</Menu.Item>
+      <Menu.Item key="自交系纯化">自交系纯化</Menu.Item>
+      <Menu.Item key="杂交组合">杂交组合</Menu.Item>
+    </Menu>
+  );
+
   const columns: ProColumns<SowingRecord>[] = [
     {
       title: '种植编号',
@@ -225,6 +361,20 @@ const SowingList: React.FC = () => {
           labelWidth: 120,
         }}
         toolBarRender={() => [
+          <Button
+            key="exportCurrent"
+            type="primary"
+            icon={<ExportOutlined />}
+            onClick={handleExportCurrent}
+            disabled={dataSource.length === 0}
+          >
+            导出本模块
+          </Button>,
+          <Dropdown key="exportAll" overlay={exportMenu}>
+            <Button type="primary">
+              全部导出 <DownOutlined />
+            </Button>
+          </Dropdown>,
           <Button
             key="batchDelete"
             danger
