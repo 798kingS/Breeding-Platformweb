@@ -104,10 +104,27 @@ ol {
       
       &.ant-menu-submenu-selected {
         > .ant-menu-submenu-title {
-          color: var(--primary-color);
+          color: var(--text-primary);
           
           .anticon {
-            color: var(--primary-color);
+            color: var(--text-primary);
+          }
+        }
+      }
+
+      .ant-menu-sub {
+        background: transparent !important;
+        
+        .ant-menu-item {
+          padding-left: 46px !important;
+          
+          &::after {
+            display: none;
+          }
+          
+          &.ant-menu-item-selected {
+            background: var(--primary-color);
+            color: #fff;
           }
         }
       }

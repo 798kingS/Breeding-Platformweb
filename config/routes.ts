@@ -71,12 +71,12 @@ export default [
     ],
   },
   {
-    name: '引种记录',
+    name: '引种管理',
     icon: 'table',
     path: '/introduction',
     routes: [
       {
-        name: '引种管理',
+        name: '引种记录',
         icon: 'import',
         path: '/introduction/list',
         component: './Introduction',
@@ -96,19 +96,24 @@ export default [
     ],
   },
   {
-    name: '自交系纯化',
+    name: '自交系纯化管理',
     icon: 'experiment',
     path: '/purification',
     routes: [
       {
         name: '自交系纯化',
-        path: '/purification',
+        path: '/purification/list',
         component: './Purification',
       },
       {
         name: '播种计划',
         path: '/purification/sowing',
         component: './Purification/Sowing',
+      },
+      {
+        name: '考种记载表',
+        path: '/purification/test-records',
+        component: './Purification/TestRecords',
       },
     ],
   },
