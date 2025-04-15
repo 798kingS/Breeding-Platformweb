@@ -1,0 +1,90 @@
+.historyCard {
+  background: linear-gradient(120deg, #ffffff 0%, #f7f9fc 100%);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+
+  :global {
+    .ant-card-head {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+      padding: 0 24px;
+      min-height: 64px;
+
+      .ant-card-head-title {
+        padding: 16px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #2d3748;
+      }
+    }
+
+    .ant-card-body {
+      padding: 24px;
+    }
+  }
+}
+
+.historyList {
+  :global {
+    .ant-list-item {
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 16px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: #ffffff;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(100, 110, 140, 0.1);
+        border-color: #d0daf0;
+      }
+
+      .ant-list-item-meta {
+        align-items: center;
+      }
+
+      .ant-list-item-action {
+        margin-top: 16px;
+      }
+    }
+  }
+}
+
+.historyItem {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #1890ff, #096dd9);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+.userIcon {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  color: white;
+  font-size: 20px;
+  padding: 8px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+}
+
+.lastMessage {
+  color: #4a5568;
+  font-size: 14px;
+  margin-bottom: 0;
+  max-width: 600px;
+} 
