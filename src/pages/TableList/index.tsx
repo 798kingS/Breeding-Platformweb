@@ -1463,6 +1463,7 @@ const TableList: React.FC = () => {
       />
 
       <Drawer
+      //查看详情
         width={800}
         open={showDetail}
         onClose={() => {

@@ -283,7 +283,7 @@ const IntroductionList: React.FC = () => {
           planCode: '',
           sowingTime: new Date().toISOString().split('T')[0],
         };
-        history.push('/purification', { purificationRecord });
+        history.push('/purification/list', { purificationRecord });
         message.success('已转入自交系纯化');
       },
     });

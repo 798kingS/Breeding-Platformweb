@@ -50,7 +50,7 @@ const ChatHistory: React.FC = () => {
   // 查看会话详情
   const handleViewSession = (sessionId: string) => {
     // 跳转到聊天页面并加载历史会话
-    history.push('/ai-chat', { sessionId });
+    history.push('/AI/ai-chat', { sessionId });
   };
 
   // 格式化时间

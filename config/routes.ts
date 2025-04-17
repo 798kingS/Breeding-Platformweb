@@ -118,16 +118,23 @@ export default [
     ],
   },
   {
-    name: 'AI智能问答',
+    name: 'AI助手',
     icon: 'robot',
-    path: '/ai-chat',
-    component: './AIChat',
-  },
-  {
-    path: '/chat-history',
-    name: '聊天记录',
-    icon: 'HistoryOutlined',
-    component: './ChatHistory',
+    path: '/AI',
+    routes: [
+      {
+        name: 'AI问答',
+        icon: 'robot',
+        path: '/AI/ai-chat',
+        component: './AI/AIChat',
+      },
+      {
+        name: '问答记录',
+        icon: 'HistoryOutlined',
+        path: '/AI/chat-history',
+        component: './AI/ChatHistory',
+      },
+    ],
   },
   {
     path: '/',
