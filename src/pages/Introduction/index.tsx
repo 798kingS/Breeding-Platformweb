@@ -276,7 +276,6 @@ const IntroductionList: React.FC = () => {
       onOk: () => {
         const purificationRecord = {
           ...record,
-          key: Date.now(),
           status: '未完成',
           plantingCode: `P${Date.now()}`,
           sowingAmount: 0,

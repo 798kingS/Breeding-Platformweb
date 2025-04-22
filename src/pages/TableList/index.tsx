@@ -345,31 +345,8 @@ const TableList: React.FC = () => {
     );
   };
 
-  const [availableVarieties, setAvailableVarieties] = useState<API.RuleListItem[]>([]);
-
   const handleShowHybridization = (record: API.RuleListItem) => {
     setCurrentVariety(record);
-    
-    // 过滤出尚未杂交的品种
-    const notHybridizedVarieties = mockData.filter(item => {
-      // 排除当前品种本身
-      if (item.key === record.key) return false;
-      
-      // 只显示相同类型的品种
-      if (item.type !== record.type) return false;
-
-      // 检查是否已经存在杂交记录
-      const hasHybridization = hybridizationList.some(hybrid => 
-        (hybrid.femaleName === record.varietyName && hybrid.maleName === item.varietyName) ||
-        (hybrid.maleName === record.varietyName && hybrid.femaleName === item.varietyName)
-      );
-
-      // 返回未杂交的品种
-      return !hasHybridization;
-    });
-
-    // 更新可选杂交品种列表
-    setAvailableVarieties(notHybridizedVarieties);
     setHybridModalOpen(true);
   };
 
@@ -398,12 +375,7 @@ const TableList: React.FC = () => {
       date: new Date().toISOString().split('T')[0]
     };
 
-    const updatedHybridList = [...hybridizationList, newHybrid];
-    setHybridizationList(updatedHybridList);
-    
-    // 保存到 localStorage
-    localStorage.setItem('hybridizationList', JSON.stringify(updatedHybridList));
-    
+    setHybridizationList([...hybridizationList, newHybrid]);
     message.success('已添加到杂交配组表');
 
     // 刷新表格数据
@@ -813,24 +785,16 @@ const TableList: React.FC = () => {
     }
 
     // 创建CSV内容
-    const headers = ['编号', '母本编号', '父本编号', '母本名称', '父本名称', '杂交组合', '配组日期'];
+    const headers = ['编号', '母本编号', '父本编号', '母本名称', '父本名称'];
     const csvContent = [
       headers.join(','),
       ...hybridizationList.map(item =>
-        [
-          item.id, 
-          item.femaleNumber, 
-          item.maleNumber, 
-          item.femaleName, 
-          item.maleName,
-          item.hybridization,
-          item.date
-        ].join(',')
+        [item.id, item.femaleNumber, item.maleNumber, item.femaleName, item.maleName].join(',')
       )
     ].join('\n');
 
     // 创建Blob对象
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
 
@@ -1099,18 +1063,31 @@ const TableList: React.FC = () => {
       title: '杂交情况',
       dataIndex: 'hybridization',
       valueType: 'text',
-      render: (_, record) => (
-        <Space direction="vertical" size={0} style={{ width: '100%' }}>
-          <span>{record.hybridization || '无'}</span>
-          <Button
-            type="link"
-            onClick={() => handleShowHybridization(record)}
-            style={{ padding: '4px 0' }}
-          >
-            {record.hybridization ? '继续杂交' : '尚未杂交'}
-          </Button>
-        </Space>
-      ),
+      render: (_, record) => {
+          return (
+          <Space>
+            {record.hybridization && (
+              <>
+                <span>{record.hybridization}</span>
+                <Button
+                  type="link"
+                  onClick={() => handleShowHybridization(record)}
+                >
+                  继续杂交
+                </Button>
+              </>
+            )}
+            {!record.hybridization && (
+              <Button
+                type="link"
+                onClick={() => handleShowHybridization(record)}
+              >
+                尚未杂交
+              </Button>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: '操作',
@@ -1490,7 +1467,6 @@ const TableList: React.FC = () => {
       />
 
       <Drawer
-      //查看详情
         width={800}
         open={showDetail}
         onClose={() => {
@@ -1722,7 +1698,10 @@ const TableList: React.FC = () => {
                   ),
                 },
               ]}
-              dataSource={availableVarieties}
+              dataSource={mockData.filter(item =>
+                item.key !== currentVariety?.key &&
+                item.type === currentVariety?.type
+              )}
               rowKey="key"
               pagination={{ pageSize: 5 }}
               style={{ marginBottom: '24px' }}
