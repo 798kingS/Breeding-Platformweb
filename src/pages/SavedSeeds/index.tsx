@@ -128,8 +128,8 @@ const SavedSeeds: React.FC = () => {
   };
 
   const filteredList = savedSeedList.filter(item =>
-    item.varietyName.includes(searchText) ||
-    item.seedNumber.includes(searchText)
+    (item.varietyName?.includes(searchText) || false) ||
+    (item.seedNumber?.includes(searchText) || false)
   );
 
   const columns = [

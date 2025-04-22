@@ -1,3 +1,4 @@
+//user/login.tsx
 import { Footer } from '@/components';
 import { getFakeCaptcha } from '@/services/Breeding Platform/login';
 import {
@@ -191,7 +192,7 @@ const Login: React.FC = () => {
             minWidth: 280,
             maxWidth: '75vw',
           }}
-          logo={<img alt="logo" src="/logo.png" />}
+          logo={<img alt="logo" src="https://breed-1258140596.cos.ap-shanghai.myqcloud.com/Breeding%20Platform/logo.png" />}
           title="Breeding Platform"
           subTitle={intl.formatMessage({ id: 'pages.layouts.userLayout.title' })}
           initialValues={{
