@@ -15,7 +15,8 @@ export default {
     // localhost:8000/api/** -> https://preview.pro.ant.design/api/**
     '/api/': {
       // 要代理的地址
-      target: 'http://82.157.118.254:8335',
+      // target: 'http://82.157.118.254:8335',
+      target: 'https://a0c3-117-148-81-19.ngrok-free.app',
       // 配置了这个可以从 http 代理到 https
       // 依赖 origin 的功能可能需要这个，比如 cookie
       changeOrigin: true,
@@ -29,8 +30,8 @@ export default {
   test: {
     // localhost:8000/api/** -> https://preview.pro.ant.design/api/**
     '/api/': {
-      // target: 'https://proapi.azurewebsites.net',
-      target: 'http://101.43.79.204:8334',
+      target: 'https://a0c3-117-148-81-19.ngrok-free.app',
+      // target: 'http://101.43.79.204:8334',
       changeOrigin: true,
       pathRewrite: { '^': '' },
     },

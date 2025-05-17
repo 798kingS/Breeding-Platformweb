@@ -1,3 +1,4 @@
+// 种质资源管理
 import { removeRule, rule, updateRule, importExcel } from '@/services/Breeding Platform/api';
 import { mockData } from '@/services/Breeding Platform/api';
 import { PlusOutlined, ImportOutlined, UploadOutlined, ExportOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';

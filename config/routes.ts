@@ -115,6 +115,11 @@ export default [
         path: '/purification/test-records',
         component: './Purification/TestRecords',
       },
+      {
+        name: '留种记录',
+        path: '/purification/saved-seeds',
+        component: './Purification/SavedRecords',
+      },
     ],
   },
   {

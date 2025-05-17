@@ -3,14 +3,14 @@ import { Button, Table, message, Input, Modal, Space } from 'antd';
 import { ExportOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 
-const SavedSeeds: React.FC = () => {
+const PurificationSavedSeeds: React.FC = () => {
   const [savedSeedList, setSavedSeedList] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   useEffect(() => {
     // 从localStorage加载留种记录
-    const records = localStorage.getItem('savedSeeds');
+      const records = localStorage.getItem('PurificationSavedSeeds');
     if (records) {
       setSavedSeedList(JSON.parse(records));
     }
@@ -24,53 +24,29 @@ const SavedSeeds: React.FC = () => {
 
     // 创建CSV内容
     const headers = [
-      '品种名称',
-      '类型',
-      '留种编号',
-      '引种年份',
-      '来源',
-      '常规种/纯化',
-      '种植年份',
-      '抗性',
-      '结果特征',
-      '开花期/果实发育期',
-      '留果个数',
-      '产量',
+      '编号',
+      '系谱编号',
+      '长势',
+      '结果数',
       '果型',
       '皮色',
       '肉色',
-      '单果重(g)',
-      '肉厚(mm)',
       '糖度(°Brix)',
       '质地',
-      '总体口感',
-      '配合力'
     ];
 
     const csvContent = [
       headers.join(','),
       ...savedSeedList.map(item => [
-        item.varietyName || '',
-        item.type || '',
         item.seedNumber || '',
-        item.introductionYear || '',
-        item.source || '',
-        item.breedingType || '',
-        item.plantingYear || '',
-        item.resistance || '',
-        item.fruitCharacteristics || '',
-        item.floweringPeriod || '',
-        item.fruitCount || '',
-        item.yield || '',
+        item.pedigreeNumber || '',
+        item.growthStatus || '',
+        item.resultCount || '',
         item.fruitShape || '',
         item.skinColor || '',
         item.fleshColor || '',
-        item.singleFruitWeight || '',
-        item.fleshThickness || '',
         item.sugarContent || '',
         item.texture || '',
-        item.overallTaste || '',
-        item.combiningAbility || ''
       ].join(','))
     ].join('\n');
 
@@ -78,7 +54,7 @@ const SavedSeeds: React.FC = () => {
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-
+    
     link.setAttribute('href', url);
     link.setAttribute('download', '留种记录.csv');
     link.style.visibility = 'hidden';
@@ -96,7 +72,7 @@ const SavedSeeds: React.FC = () => {
       onOk: () => {
         const newList = savedSeedList.filter(item => item.key !== key);
         setSavedSeedList(newList);
-        localStorage.setItem('savedSeeds', JSON.stringify(newList));
+        localStorage.setItem('PurificationSavedSeeds', JSON.stringify(newList));
         message.success('记录已删除');
       },
     });
@@ -116,7 +92,7 @@ const SavedSeeds: React.FC = () => {
       onOk: () => {
         const newList = savedSeedList.filter(item => !selectedRowKeys.includes(item.key));
         setSavedSeedList(newList);
-        localStorage.setItem('savedSeeds', JSON.stringify(newList));
+        localStorage.setItem('PurificationSavedSeeds', JSON.stringify(newList));
         setSelectedRowKeys([]);
         message.success(`已删除 ${selectedRowKeys.length} 条记录`);
       },
@@ -128,43 +104,46 @@ const SavedSeeds: React.FC = () => {
   };
 
   const filteredList = savedSeedList.filter(item =>
-    (item.varietyName?.includes(searchText) || false) ||
+    (item.pedigreeNumber?.includes(searchText) || false) ||
     (item.seedNumber?.includes(searchText) || false)
   );
 
   const columns = [
     {
-      title: '品种名称',
-      dataIndex: 'varietyName',
-    },
-    {
-      title: '类型',
-      dataIndex: 'type',
-    },
-    {
-      title: '留种编号',
+      title: '编号',
       dataIndex: 'seedNumber',
     },
     {
-      title: '引种年份',
-      dataIndex: 'introductionYear',
+      title: '系谱编号',
+      dataIndex: 'pedigreeNumber',
     },
     {
-      title: '来源',
-      dataIndex: 'source',
+      title: '长势',
+      dataIndex: 'growthStatus',
     },
     {
-      title: '常规种/纯化',
-      dataIndex: 'breedingType',
-      render: (text: string) => text === 'regular' ? '常规种' : '纯化',
+      title: '结果数',
+      dataIndex: 'resultCount',
     },
     {
-      title: '种植年份',
-      dataIndex: 'plantingYear',
+      title: '果型',
+      dataIndex: 'fruitShape',
     },
     {
-      title: '抗性',
-      dataIndex: 'resistance',
+      title: '皮色',
+      dataIndex: 'skinColor',
+    },
+    {
+      title: '肉色',
+      dataIndex: 'fleshColor',
+    },
+    {
+      title: '糖度(°Brix)',
+      dataIndex: 'sugarContent',
+    },
+    {
+      title: '质地',
+      dataIndex: 'texture',
     },
     {
       title: '操作',
@@ -239,4 +218,4 @@ const SavedSeeds: React.FC = () => {
   );
 };
 
-export default SavedSeeds; 
+export default PurificationSavedSeeds;

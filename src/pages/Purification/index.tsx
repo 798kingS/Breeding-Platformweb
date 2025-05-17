@@ -154,36 +154,30 @@ const PurificationList: React.FC = () => {
   };
 
   // 处理Excel导入
-  const handleImport = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-        const newRecords: PurificationRecord[] = jsonData.map((row: any, index: number) => ({
-          key: Date.now() + index,
-          code: row['编号'] || '',
-          name: row['品种名称'] || '',
-          method: row['引种方式'] || '',
-          type: row['品种类型'] || '',
-          isRegular: row['是否常规'] || '',
-          generation: row['世代'] || '',
-          plantingCode: row['种植编号'] || `P${Date.now() + index}`,
-          sowingAmount: Number(row['播种数量']) || 0,
-          sowingTime: row['播种时间'] || new Date().toISOString().split('T')[0],
+  const handleImport = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      // 假设后端接口为 /api/purification/ExcelImport，返回格式为 { data: PurificationRecord[] }
+      const response = await fetch('/api/Selfing/ExcelImport', {
+        method: 'POST',
+        body: formData,
+      });
+      const result = await response.json();
+      if (result && Array.isArray(result.data)) {
+        // 自动生成key，拼接到现有数据
+        const newData = result.data.map((item: any, idx: number) => ({
+          ...item,
+          key: dataSource.length + idx + 1,
         }));
-
-        setDataSource(prev => [...prev, ...newRecords]);
-        message.success(`成功导入 ${newRecords.length} 条记录`);
-      } catch (error) {
-        message.error('导入失败，请检查文件格式是否正确');
+        setDataSource(prev => [...prev, ...newData]);
+        message.success('导入成功');
+      } else {
+        message.error('导入失败，后端未返回有效数据');
       }
-    };
-    reader.readAsArrayBuffer(file);
+    } catch (error) {
+      message.error('导入失败，请重试');
+    }
     return false;
   };
 
@@ -221,7 +215,7 @@ const PurificationList: React.FC = () => {
       dataIndex: 'sowingAmount',
     },
     {
-      title: '播种时间',
+      title: '引种时间',
       dataIndex: 'sowingTime',
       valueType: 'date',
     },
