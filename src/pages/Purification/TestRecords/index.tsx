@@ -1,319 +1,255 @@
 // 考种记载表
-import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { useRef, useState, useEffect } from 'react';
+import { ProTable } from '@ant-design/pro-components';
 import { Button, message, Modal } from 'antd';
-import { EditOutlined, SaveOutlined, ExportOutlined, DeleteOutlined } from '@ant-design/icons';
-import * as XLSX from 'xlsx';
+import { ExportOutlined } from '@ant-design/icons';
+import React, { useRef, useState, useEffect } from 'react';
 
-interface TestRecord {
-  id: string;
-  plantingCode: string;
-  code: string;
-  name: string;
-  method: string;
-  type: string;
-  isRegular: string;
-  generation: string;
-  sowingAmount: number;
-  sowingTime: string;
-  planCode: string;
-  recordIndex: number;
-}
-
-interface SavedSeedRecord {
-  id: string;
-  plantingCode: string;
-  code: string;
-  name: string;
-  method: string;
-  type: string;
-  isRegular: string;
-  generation: string;
-  amount: number;
-  saveTime: string;
-  source: string;
-}
-
-const TestRecordsList: React.FC = () => {
+const TestRecords: React.FC = () => {
   const actionRef = useRef<ActionType>();
-  const [dataSource, setDataSource] = useState<TestRecord[]>([]);
+  const [dataSource, setDataSource] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
 
-  // 从 localStorage 获取数据
-  useEffect(() => {
-    const records = localStorage.getItem('testRecords');
-    if (records) {
-      setDataSource(JSON.parse(records));
+  // 加载考种记载表数据
+  const loadExamRecords = () => {
+    setLoading(true);
+    try {
+      const records = localStorage.getItem('examRecords');
+      if (records) {
+        const parsedRecords = JSON.parse(records);
+        setDataSource(parsedRecords);
+      }
+    } catch (error) {
+      console.error('Error loading exam records:', error);
+      message.error('加载考种记载表数据失败');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // 在组件挂载时加载数据
+  useEffect(() => {
+    loadExamRecords();
   }, []);
 
-  // 处理数据保存
-  const handleSave = async (row: TestRecord) => {
-    const newData = dataSource.map((item) => {
-      if (item.id === row.id) {
-        return { ...item, ...row };
-      }
-      return item;
-    });
+  // 保存编辑后的数据
+  const handleSave = async (row: any) => {
+    const newData = dataSource.map((item) => (item.id === row.id ? { ...item, ...row } : item));
     setDataSource(newData);
-    localStorage.setItem('testRecords', JSON.stringify(newData));
+    localStorage.setItem('examRecords', JSON.stringify(newData));
     message.success('保存成功');
     return true;
   };
 
-  // 处理留种
-  const handleSaveSeed = (record: TestRecord) => {
-    Modal.confirm({
-      title: '确认留种',
-      content: '确定要将此记录添加到留种记录吗？',
-      onOk: () => {
-        const savedSeedRecord: SavedSeedRecord = {
-          id: `${record.id}_saved_${Date.now()}`,
-          plantingCode: record.plantingCode,
-          code: record.code,
-          name: record.name,
-          method: record.method,
-          type: record.type,
-          isRegular: record.isRegular,
-          generation: record.generation,
-          amount: record.sowingAmount,
-          saveTime: new Date().toISOString().split('T')[0],
-          source: '自交系纯化'
-        };
-
-        // 获取现有留种记录
-        const existingRecords = localStorage.getItem('savedSeeds');
-        const savedSeeds = existingRecords 
-          ? [...JSON.parse(existingRecords), savedSeedRecord]
-          : [savedSeedRecord];
-        
-        // 保存到 localStorage
-        localStorage.setItem('savedSeeds', JSON.stringify(savedSeeds));
-        message.success('添加到留种记录成功');
-      }
-    });
-  };
-
-  // 处理删除
-  const handleDelete = (record: TestRecord) => {
+  // 删除当前行
+  const handleDelete = (record: any) => {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这条记录吗？',
-      okText: '确认',
-      cancelText: '取消',
       onOk: () => {
         const newData = dataSource.filter(item => item.id !== record.id);
         setDataSource(newData);
-        localStorage.setItem('testRecords', JSON.stringify(newData));
+        localStorage.setItem('examRecords', JSON.stringify(newData));
         message.success('删除成功');
       },
     });
   };
 
+  // 留种功能
+  const handleSaveSeed = (record: any) => {
+    const existing = localStorage.getItem('savedSeeds');
+    const savedSeeds = existing ? JSON.parse(existing) : [];
+    // 判断是否已留种（以 code 唯一）
+    if (savedSeeds.some((item: any) => item.code === record.code)) {
+      message.info('已经留种');
+      return;
+    }
+    // 构造和 SavedRecords 页面一致的字段
+    const newSeed = {
+      plantingcode: record.plantingcode,
+      code: record.code,
+      name: record.varietyName,
+      method: record.method,
+      type: record.type,
+      isRegular: record.isRegular,
+      generation: record.generation,
+      amount: record.amount || 1,
+      saveTime: new Date().toISOString(),
+      source: record.source || '',
+      key: Date.now() + Math.random(),
+    };
+    savedSeeds.push(newSeed);
+    localStorage.setItem('savedSeeds', JSON.stringify(savedSeeds));
+    message.success('留种成功');
+  };
+
   // 处理导出
   const handleExport = () => {
     if (dataSource.length === 0) {
-      message.warning('没有数据可导出');
+      message.warning('暂无数据可导出');
       return;
     }
 
-    // 准备导出数据
-    const exportData = dataSource.map(item => ({
-      '种植编号': item.plantingCode,
-      '编号': item.code,
-      '品种名称': item.name,
-      '引种方式': item.method,
-      '品种类型': item.type,
-      '是否常规': item.isRegular,
-      '世代': item.generation,
-      '播种数量': item.sowingAmount,
-      '播种时间': item.sowingTime,
-      '计划编号': item.planCode,
-      '记录序号': item.recordIndex
-    }));
-
-    // 创建工作簿
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(exportData);
-
-    // 设置列宽
-    const colWidths = [
-      { wch: 15 }, // 种植编号
-      { wch: 15 }, // 编号
-      { wch: 20 }, // 品种名称
-      { wch: 12 }, // 引种方式
-      { wch: 12 }, // 品种类型
-      { wch: 12 }, // 是否常规
-      { wch: 10 }, // 世代
-      { wch: 12 }, // 播种数量
-      { wch: 15 }, // 播种时间
-      { wch: 15 }, // 计划编号
-      { wch: 10 }, // 记录序号
+    const headers = [
+      '种植编号',
+      '编号',
+      '品种名称',
+      '引种方式',
+      '品种类型',
+      '是否常规',
+      '世代',
+      '数量',
+      '留种时间',
+      '来源'
     ];
-    ws['!cols'] = colWidths;
 
-    // 添加工作表到工作簿
-    XLSX.utils.book_append_sheet(wb, ws, '考种记载表');
+    const csvContent = [
+      headers.join(','),
+      ...dataSource.map(record => [
+        record.plantingcode,
+        record.code,
+        record.varietyName,
+        record.method,
+        record.type,
+        record.isRegular ? '是' : '否',
+        record.generation,
+        record.amount,
+        record.saveTime,
+        record.source
+      ].join(','))
+    ].join('\n');
 
-    // 生成Excel文件
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = url;
-    link.download = `考种记载表_${new Date().toLocaleDateString()}.xlsx`;
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', '考种记载表.csv');
+    link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    message.success('导出成功');
   };
 
-  const columns: ProColumns<TestRecord>[] = [
+  const columns: ProColumns<any>[] = [
     {
-      title: '种植编号',
-      dataIndex: 'plantingCode',
-      width: 120,
+      title: '系谱编号',
+      dataIndex: 'plantingcode',
+      copyable: true,
       editable: () => true,
     },
     {
       title: '编号',
       dataIndex: 'code',
-      width: 120,
+      copyable: true,
       editable: () => true,
     },
     {
       title: '品种名称',
-      dataIndex: 'name',
-      width: 150,
+      dataIndex: 'varietyName',
       editable: () => true,
     },
     {
       title: '引种方式',
       dataIndex: 'method',
-      width: 100,
       editable: () => true,
     },
     {
       title: '品种类型',
       dataIndex: 'type',
-      width: 100,
       editable: () => true,
     },
     {
       title: '是否常规',
       dataIndex: 'isRegular',
-      width: 100,
+      valueEnum: {
+        true: { text: '是', status: 'Success' },
+        false: { text: '否', status: 'Error' },
+      },
       editable: () => true,
     },
     {
       title: '世代',
       dataIndex: 'generation',
-      width: 80,
       editable: () => true,
     },
     {
-      title: '播种数量',
-      dataIndex: 'sowingAmount',
-      width: 100,
+      title: '数量',
+      dataIndex: 'amount',
       editable: () => true,
     },
     {
-      title: '播种时间',
-      dataIndex: 'sowingTime',
-      width: 120,
-      editable: () => true,
-      valueType: 'date',
-    },
-    {
-      title: '计划编号',
-      dataIndex: 'planCode',
-      width: 120,
+      title: '留种时间',
+      dataIndex: 'saveTime',
+      valueType: 'dateTime',
       editable: () => true,
     },
     {
-      title: '记录序号',
-      dataIndex: 'recordIndex',
-      width: 100,
+      title: '来源',
+      dataIndex: 'source',
       editable: () => true,
     },
     {
       title: '操作',
       valueType: 'option',
-      width: 200,
+      key: 'option',
       render: (_, record) => [
-        <Button
+        <a
           key="edit"
-          type="link"
-          icon={<EditOutlined />}
-          onClick={() => {
-            setEditableKeys([record.id]);
-            actionRef.current?.startEditable?.(record.id);
-          }}
+          onClick={() => setEditableKeys([record.id])}
         >
           编辑
-        </Button>,
-        <Button
-          key="save"
-          type="link"
-          icon={<SaveOutlined />}
-          onClick={() => handleSaveSeed(record)}
-        >
-          留种
-        </Button>,
-        <Button
+        </a>,
+        <a
           key="delete"
-          type="link"
-          danger
-          icon={<DeleteOutlined />}
           onClick={() => handleDelete(record)}
         >
           删除
-        </Button>,
+        </a>,
+        <a
+          key="saveSeed"
+          onClick={() => handleSaveSeed(record)}
+        >
+          留种
+        </a>,
       ],
     },
   ];
 
   return (
     <PageContainer>
-      <ProTable<TestRecord>
+      <ProTable<any>
         headerTitle="考种记载表"
         actionRef={actionRef}
         rowKey="id"
         search={false}
-        dataSource={dataSource}
-        columns={columns}
-        editable={{
-          type: 'single',
-          editableKeys,
-          onSave: async (_, row) => {
-            const success = await handleSave(row as TestRecord);
-            if (success) {
-              setEditableKeys([]);
-            }
-            return success;
-          },
-          onChange: setEditableKeys,
-        }}
         toolBarRender={() => [
           <Button
             key="export"
             type="primary"
-            icon={<ExportOutlined />}
             onClick={handleExport}
+            icon={<ExportOutlined />}
           >
             导出
           </Button>,
         ]}
+        dataSource={dataSource}
+        columns={columns}
+        loading={loading}
+        editable={{
+          type: 'single',
+          editableKeys,
+          onSave: async (_, row) => handleSave(row),
+          onChange: setEditableKeys,
+        }}
         pagination={{
           pageSize: 10,
-          showQuickJumper: true,
         }}
       />
     </PageContainer>
   );
 };
 
-export default TestRecordsList; 
+export default TestRecords; 

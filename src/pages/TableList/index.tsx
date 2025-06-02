@@ -139,8 +139,19 @@ const handleGenerateReport = async () => {
     const hide = message.loading('正在生成播种计划表...');
 
     // 准备发送到后端的数据
-    const sowingPlanData = {
-      records: allRecords.map((record: SowingRecord) => ({
+    // const sowingPlanData = {
+    //   records: allRecords.map((record: SowingRecord) => ({
+    //     plantingCode: record.code,
+    //     seedNumber: record.seedNumber,
+    //     varietyName: record.varietyName,
+    //     sowingCount: record.sowingCount,
+    //     planNumber: record.planNumber,
+    //     createTime: record.createTime
+    //   }))
+    // };
+
+    const sowingPlanData = 
+      allRecords.map((record: SowingRecord) => ({
         plantingCode: record.code,
         seedNumber: record.seedNumber,
         varietyName: record.varietyName,
@@ -148,10 +159,11 @@ const handleGenerateReport = async () => {
         planNumber: record.planNumber,
         createTime: record.createTime
       }))
-    };
+    
+    console.log(JSON.stringify(sowingPlanData));
 
     // 发送数据到后端
-    const response = await fetch('/api/sowing-plan', {
+    const response = await fetch('https://0208-117-148-63-248.ngrok-free.app/api/seed/sow', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -199,7 +211,7 @@ const handleGenerateReport = async () => {
     link.click();
     document.body.removeChild(link);
 
-    message.success('已生成播种计划表并发送到后端');
+    message.success('已生成播种计划表');
   } catch (error) {
     message.error('生成播种计划表失败，请重试');
     console.error('Error generating sowing plan:', error);

@@ -118,39 +118,63 @@ const SowingList: React.FC = () => {
   };
 
   // 处理生成考种记载表
-  const handleGenerateTestRecord = async (record: any, quantity: number) => {
-    const testRecords: TestRecord[] = [];
-    
-    // 生成指定数量的考种记录
-    for (let i = 0; i < quantity; i++) {
-      testRecords.push({
-        id: `${record.id}_test_${i + 1}`,
-        plantingCode: record.plantingCode,
-        code: record.code,
-        name: record.name,
-        method: record.method,
-        type: record.type,
-        isRegular: record.isRegular,
-        generation: record.generation,
-        sowingAmount: record.sowingAmount,
-        sowingTime: record.sowingTime,
-        planCode: record.planCode,
-        status: '待考种',
-        recordIndex: i + 1,
-      });
-    }
+  const handleGenerateExamRecords = async (record: any, count: number) => {
+    try {
+      // 显示加载提示
+      const hide = message.loading('正在生成考种记载表...');
 
-    // 保存到 localStorage
-    const existingRecords = localStorage.getItem('testRecords');
-    const allRecords = existingRecords 
-      ? [...JSON.parse(existingRecords), ...testRecords]
-      : testRecords;
-    
-    localStorage.setItem('testRecords', JSON.stringify(allRecords));
-    message.success('考种记载表生成成功');
-    
-    // 跳转到考种记载表页面
-    history.push('/purification/test-records');
+      // 准备发送到后端的数据
+      const examData = {
+        plantingCode: record.plantingCode, // 系谱编号
+        code: record.code,                 // 编号
+        varietyName: record.name,          // 品种名称
+        // sowingCount: record.sowingAmount,  // 播种数量
+        // planNumber: record.planCode,       // 计划编号
+        createTime: record.sowingTime,     // 播种时间
+        generateCount: count,
+        method: record.method,             // 引种方式
+        type: record.type,                 // 品种类型
+        isRegular: record.isRegular,       // 是否常规
+        generation: record.generation      // 世代
+      };
+      console.log('Sending exam data:', examData);
+
+      // 发送数据到后端
+      const response = await fetch('https://4664-117-148-63-248.ngrok-free.app/api/Selfing/sow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(examData),
+      });
+
+      if (!response.ok) {
+        throw new Error('生成考种记载表失败');
+      }
+
+      const result = await response.json();
+      console.log('后端返回的考种记载表数据:', result.data);
+      const newRecords = Array.isArray(result.data) ? result.data : [];
+      const existingRecords = localStorage.getItem('examRecords');
+      const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
+      allRecords.push(...newRecords);
+      localStorage.setItem('examRecords', JSON.stringify(allRecords));
+
+      // 隐藏加载提示
+      hide();
+      message.success('已生成考种记载表');
+
+      // 关闭模态框
+      setIsModalVisible(false);
+      setCurrentRecord(null);
+
+      // 跳转到考种记载表页面
+      // history.push('/purification/test-records');
+
+    } catch (error) {
+      message.error('生成考种记载表失败，请重试');
+      console.error('Error generating exam records:', error);
+    }
   };
 
   // 处理导出本模块数据
@@ -219,7 +243,7 @@ const SowingList: React.FC = () => {
           const records = JSON.parse(sowingRecords);
           exportData = records.map((item: any) => ({
             '种植编号': item.code,
-            '编号': item.seedNumber,
+            '编号': item.code,
             '品种名称': item.varietyName,
             '播种数量': item.sowingCount,
             '计划编号': item.planNumber,
@@ -335,7 +359,7 @@ const SowingList: React.FC = () => {
 
     // 获取自交系纯化记录
     allRecords.push(...dataSource.map(item => ({
-      '种植编号': item.plantingCode,
+      '系谱编号': item.plantingCode,
       '编号': item.code,
       '品种名称': item.name,
       '引种方式': item.method,
@@ -455,7 +479,7 @@ const SowingList: React.FC = () => {
 
   const columns: ProColumns<SowingRecord>[] = [
     {
-      title: '种植编号',
+      title: '系谱编号',
       dataIndex: 'plantingCode',
     },
     {
@@ -483,17 +507,9 @@ const SowingList: React.FC = () => {
       dataIndex: 'generation',
     },
     {
-      title: '播种数量',
-      dataIndex: 'sowingAmount',
-    },
-    {
       title: '播种时间',
       dataIndex: 'sowingTime',
       valueType: 'date',
-    },
-    {
-      title: '计划编号',
-      dataIndex: 'planCode',
     },
     {
       title: '记录索引',
@@ -599,7 +615,7 @@ const SowingList: React.FC = () => {
         }}
         onFinish={async (values) => {
           if (currentRecord) {
-            await handleGenerateTestRecord(currentRecord, values.quantity);
+            await handleGenerateExamRecords(currentRecord, values.quantity);
           }
           setIsModalVisible(false);
           form.resetFields();

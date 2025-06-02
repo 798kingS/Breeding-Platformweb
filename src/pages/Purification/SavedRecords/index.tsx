@@ -66,14 +66,14 @@ const PurificationSavedSeeds: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  const handleDelete = (key: number) => {
+  const handleDelete = (code: string) => {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这条记录吗？',
       okText: '确认',
       cancelText: '取消',
       onOk: () => {
-        const newList = savedSeedList.filter(item => item.key !== key);
+        const newList = savedSeedList.filter(item => item.code !== code);
         setSavedSeedList(newList);
         localStorage.setItem('savedSeeds', JSON.stringify(newList));
         message.success('记录已删除');
@@ -113,8 +113,8 @@ const PurificationSavedSeeds: React.FC = () => {
 
   const columns = [
     {
-      title: '种植编号',
-      dataIndex: 'plantingCode',
+      title: '系谱编号',
+      dataIndex: 'plantingcode',
     },
     {
       title: '编号',
@@ -160,7 +160,7 @@ const PurificationSavedSeeds: React.FC = () => {
           type="link"
           danger
           icon={<DeleteOutlined />}
-          onClick={() => handleDelete(record.id)}
+          onClick={() => handleDelete(record.code)}
         >
           删除
         </Button>

@@ -183,7 +183,7 @@ const PurificationList: React.FC = () => {
 
   const columns: ProColumns<PurificationRecord>[] = [
     {
-      title: '种植编号',
+      title: '系谱编号',
       dataIndex: 'plantingCode',
     },
     {
