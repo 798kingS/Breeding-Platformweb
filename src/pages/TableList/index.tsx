@@ -125,7 +125,7 @@ const handleRemove = async (selectedRows: API.RuleListItem[]) => {
   }
 };
 
-const handleGenerateReport = () => {
+const handleGenerateReport = async () => {
   const existingRecords = localStorage.getItem('sowingRecords');
   const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
 
@@ -134,75 +134,76 @@ const handleGenerateReport = () => {
     return;
   }
 
-  const newRecords = allRecords.map((record: SowingRecord) => ({
-    key: mockData.length + Math.random(),
-    photo1: 'https://example.com/photo1.png',
-    photo2: 'https://example.com/photo2.png',
-    varietyName: record.varietyName,
-    type: '未分类',
-    introductionYear: new Date().getFullYear().toString(),
-    source: '播种记录',
-    breedingType: 'regular',
-    seedNumber: record.seedNumber,
-    plantingYear: new Date().getFullYear().toString(),
-    resistance: '',
-    fruitCharacteristics: '',
-    floweringPeriod: '',
-    fruitCount: 0,
-    yield: 0,
-    fruitShape: '',
-    skinColor: '',
-    fleshColor: '',
-    singleFruitWeight: 0,
-    fleshThickness: 0,
-    sugarContent: 0,
-    texture: '',
-    overallTaste: '',
-    combiningAbility: '',
-    parentMale: '',
-    parentFemale: '',
-    hybridization: ''
-  }));
+  try {
+    // 显示加载提示
+    const hide = message.loading('正在生成播种计划表...');
 
-  mockData.push(...newRecords);
+    // 准备发送到后端的数据
+    const sowingPlanData = {
+      records: allRecords.map((record: SowingRecord) => ({
+        plantingCode: record.code,
+        seedNumber: record.seedNumber,
+        varietyName: record.varietyName,
+        sowingCount: record.sowingCount,
+        planNumber: record.planNumber,
+        createTime: record.createTime
+      }))
+    };
 
-  const headers = [
-    '种植编号',
-    '编号',
-    '品种名称',
-    '播种数量',
-    '计划编号',
-    '创建时间'
-  ];
+    // 发送数据到后端
+    const response = await fetch('/api/sowing-plan', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(sowingPlanData),
+    });
 
-  const csvContent = [
-    headers.join(','),
-    ...allRecords.map((record: SowingRecord) => [
-      record.code,
-      record.seedNumber,
-      record.varietyName,
-      record.sowingCount,
-      record.planNumber,
-      record.createTime
-    ].join(','))
-  ].join('\n');
+    if (!response.ok) {
+      throw new Error('生成播种计划表失败');
+    }
 
-  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
+    // 隐藏加载提示
+    hide();
 
-  link.setAttribute('href', url);
-  link.setAttribute('download', '播种计划表.csv');
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    // 生成CSV文件
+    const headers = [
+      '种植编号',
+      '编号',
+      '品种名称',
+      '播种数量',
+      '计划编号',
+      '创建时间'
+    ];
 
-  message.success('已生成播种计划表并添加到种质资源库');
+    const csvContent = [
+      headers.join(','),
+      ...allRecords.map((record: SowingRecord) => [
+        record.code,
+        record.seedNumber,
+        record.varietyName,
+        record.sowingCount,
+        record.planNumber,
+        record.createTime
+      ].join(','))
+    ].join('\n');
 
-  // if (actionRef.current) {
-  //   actionRef.current.reload();
-  // }
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', '播种计划表.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    message.success('已生成播种计划表并发送到后端');
+  } catch (error) {
+    message.error('生成播种计划表失败，请重试');
+    console.error('Error generating sowing plan:', error);
+  }
 };
 
 const TableList: React.FC = () => {

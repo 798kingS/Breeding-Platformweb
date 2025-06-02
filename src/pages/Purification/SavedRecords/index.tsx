@@ -10,7 +10,8 @@ const PurificationSavedSeeds: React.FC = () => {
 
   useEffect(() => {
     // 从localStorage加载留种记录
-      const records = localStorage.getItem('PurificationSavedSeeds');
+      const records = localStorage.getItem('savedSeeds');
+      console.log('Loaded saved seeds:', records);
     if (records) {
       setSavedSeedList(JSON.parse(records));
     }
@@ -24,29 +25,31 @@ const PurificationSavedSeeds: React.FC = () => {
 
     // 创建CSV内容
     const headers = [
+      '种植编号',
       '编号',
-      '系谱编号',
-      '长势',
-      '结果数',
-      '果型',
-      '皮色',
-      '肉色',
-      '糖度(°Brix)',
-      '质地',
+      '品种名称',
+      '引种方式',
+      '品种类型',
+      '是否常规',
+      '世代',
+      '数量',
+      '留种时间',
+      '来源'
     ];
 
     const csvContent = [
       headers.join(','),
       ...savedSeedList.map(item => [
-        item.seedNumber || '',
-        item.pedigreeNumber || '',
-        item.growthStatus || '',
-        item.resultCount || '',
-        item.fruitShape || '',
-        item.skinColor || '',
-        item.fleshColor || '',
-        item.sugarContent || '',
-        item.texture || '',
+        item.plantingCode || '',
+        item.code || '',
+        item.name || '',
+        item.method || '',
+        item.type || '',
+        item.isRegular || '',
+        item.generation || '',
+        item.amount || '',
+        item.saveTime || '',
+        item.source || ''
       ].join(','))
     ].join('\n');
 
@@ -72,7 +75,7 @@ const PurificationSavedSeeds: React.FC = () => {
       onOk: () => {
         const newList = savedSeedList.filter(item => item.key !== key);
         setSavedSeedList(newList);
-        localStorage.setItem('PurificationSavedSeeds', JSON.stringify(newList));
+        localStorage.setItem('savedSeeds', JSON.stringify(newList));
         message.success('记录已删除');
       },
     });
@@ -92,7 +95,7 @@ const PurificationSavedSeeds: React.FC = () => {
       onOk: () => {
         const newList = savedSeedList.filter(item => !selectedRowKeys.includes(item.key));
         setSavedSeedList(newList);
-        localStorage.setItem('PurificationSavedSeeds', JSON.stringify(newList));
+        localStorage.setItem('savedSeeds', JSON.stringify(newList));
         setSelectedRowKeys([]);
         message.success(`已删除 ${selectedRowKeys.length} 条记录`);
       },
@@ -104,46 +107,50 @@ const PurificationSavedSeeds: React.FC = () => {
   };
 
   const filteredList = savedSeedList.filter(item =>
-    (item.pedigreeNumber?.includes(searchText) || false) ||
-    (item.seedNumber?.includes(searchText) || false)
+    (item.name?.includes(searchText) || false) ||
+    (item.code?.includes(searchText) || false)
   );
 
   const columns = [
     {
+      title: '种植编号',
+      dataIndex: 'plantingCode',
+    },
+    {
       title: '编号',
-      dataIndex: 'seedNumber',
+      dataIndex: 'code',
     },
     {
-      title: '系谱编号',
-      dataIndex: 'pedigreeNumber',
+      title: '品种名称',
+      dataIndex: 'name',
     },
     {
-      title: '长势',
-      dataIndex: 'growthStatus',
+      title: '引种方式',
+      dataIndex: 'method',
     },
     {
-      title: '结果数',
-      dataIndex: 'resultCount',
+      title: '品种类型',
+      dataIndex: 'type',
     },
     {
-      title: '果型',
-      dataIndex: 'fruitShape',
+      title: '是否常规',
+      dataIndex: 'isRegular',
     },
     {
-      title: '皮色',
-      dataIndex: 'skinColor',
+      title: '世代',
+      dataIndex: 'generation',
     },
     {
-      title: '肉色',
-      dataIndex: 'fleshColor',
+      title: '数量',
+      dataIndex: 'amount',
     },
     {
-      title: '糖度(°Brix)',
-      dataIndex: 'sugarContent',
+      title: '留种时间',
+      dataIndex: 'saveTime',
     },
     {
-      title: '质地',
-      dataIndex: 'texture',
+      title: '来源',
+      dataIndex: 'source',
     },
     {
       title: '操作',
@@ -153,7 +160,7 @@ const PurificationSavedSeeds: React.FC = () => {
           type="link"
           danger
           icon={<DeleteOutlined />}
-          onClick={() => handleDelete(record.key)}
+          onClick={() => handleDelete(record.id)}
         >
           删除
         </Button>

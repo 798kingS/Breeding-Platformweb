@@ -10,23 +10,23 @@ import moment from 'moment';
 
 // 定义播种记录类型
 type SowingRecord = {
-  plantingCode: string;    // 种植编号
-  code: string;           // 编号
-  name: string;          // 品种名称
-  sowingAmount: number;   // 播种数量
-  planCode: string;      // 计划编号
+  plantingCode: string;// 种植编号
+  code: string;      // 编号
+  name: string; // 品种名称
+  sowingAmount: number;  // 播种数量
+  planCode: string; // 计划编号
 };
 
 // 定义表格数据类型
 type IntroductionRecord = {
   key: number;
-  code: string;         // 编号
-  name: string;         // 引种名称
-  method: string;       // 引种方式
-  type: string;         // 品种类型
-  isRegular: string;    // 是否常规
-  generation: string;   // 世代
-  time: string;         // 引种时间
+  code: string;  // 编号
+  name: string;  // 引种名称
+  method: string; // 引种方式
+  type: string;  // 品种类型
+  isRegular: string; // 是否常规
+  generation: string;  // 世代
+  time: string;  // 引种时间
 };
 
 const IntroductionList: React.FC = () => {
@@ -192,7 +192,7 @@ const IntroductionList: React.FC = () => {
     try {
       const values = await form.validateFields();
       const sowingAmount = values.sowingAmount || 1;
-      
+
       // 创建多个播种记录，数量等于用户输入的播种数量
       const sowingRecords = [];
       for (let i = 0; i < sowingAmount; i++) {

@@ -2,8 +2,8 @@
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { useRef, useState, useEffect } from 'react';
-import { Button, message, Modal, Space } from 'antd';
-import { EditOutlined, SaveOutlined, ExportOutlined } from '@ant-design/icons';
+import { Button, message, Modal } from 'antd';
+import { EditOutlined, SaveOutlined, ExportOutlined, DeleteOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 
 interface TestRecord {
@@ -49,7 +49,7 @@ const TestRecordsList: React.FC = () => {
   }, []);
 
   // 处理数据保存
-  const handleSave = (row: TestRecord) => {
+  const handleSave = async (row: TestRecord) => {
     const newData = dataSource.map((item) => {
       if (item.id === row.id) {
         return { ...item, ...row };
@@ -59,6 +59,7 @@ const TestRecordsList: React.FC = () => {
     setDataSource(newData);
     localStorage.setItem('testRecords', JSON.stringify(newData));
     message.success('保存成功');
+    return true;
   };
 
   // 处理留种
@@ -91,6 +92,22 @@ const TestRecordsList: React.FC = () => {
         localStorage.setItem('savedSeeds', JSON.stringify(savedSeeds));
         message.success('添加到留种记录成功');
       }
+    });
+  };
+
+  // 处理删除
+  const handleDelete = (record: TestRecord) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这条记录吗？',
+      okText: '确认',
+      cancelText: '取消',
+      onOk: () => {
+        const newData = dataSource.filter(item => item.id !== record.id);
+        setDataSource(newData);
+        localStorage.setItem('testRecords', JSON.stringify(newData));
+        message.success('删除成功');
+      },
     });
   };
 
@@ -159,68 +176,68 @@ const TestRecordsList: React.FC = () => {
       title: '种植编号',
       dataIndex: 'plantingCode',
       width: 120,
-      editable: true,
+      editable: () => true,
     },
     {
       title: '编号',
       dataIndex: 'code',
       width: 120,
-      editable: true,
+      editable: () => true,
     },
     {
       title: '品种名称',
       dataIndex: 'name',
       width: 150,
-      editable: true,
+      editable: () => true,
     },
     {
       title: '引种方式',
       dataIndex: 'method',
       width: 100,
-      editable: true,
+      editable: () => true,
     },
     {
       title: '品种类型',
       dataIndex: 'type',
       width: 100,
-      editable: true,
+      editable: () => true,
     },
     {
       title: '是否常规',
       dataIndex: 'isRegular',
       width: 100,
-      editable: true,
+      editable: () => true,
     },
     {
       title: '世代',
       dataIndex: 'generation',
       width: 80,
-      editable: true,
+      editable: () => true,
     },
     {
       title: '播种数量',
       dataIndex: 'sowingAmount',
       width: 100,
-      editable: true,
+      editable: () => true,
     },
     {
       title: '播种时间',
       dataIndex: 'sowingTime',
       width: 120,
-      editable: true,
+      editable: () => true,
       valueType: 'date',
     },
     {
       title: '计划编号',
       dataIndex: 'planCode',
       width: 120,
-      editable: true,
+      editable: () => true,
     },
     {
       title: '记录序号',
       dataIndex: 'recordIndex',
       width: 100,
-      editable: true,
+      editable: () => true,
     },
     {
       title: '操作',
@@ -233,6 +250,7 @@ const TestRecordsList: React.FC = () => {
           icon={<EditOutlined />}
           onClick={() => {
             setEditableKeys([record.id]);
+            actionRef.current?.startEditable?.(record.id);
           }}
         >
           编辑
@@ -244,6 +262,15 @@ const TestRecordsList: React.FC = () => {
           onClick={() => handleSaveSeed(record)}
         >
           留种
+        </Button>,
+        <Button
+          key="delete"
+          type="link"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => handleDelete(record)}
+        >
+          删除
         </Button>,
       ],
     },
@@ -262,7 +289,11 @@ const TestRecordsList: React.FC = () => {
           type: 'single',
           editableKeys,
           onSave: async (_, row) => {
-            handleSave(row as TestRecord);
+            const success = await handleSave(row as TestRecord);
+            if (success) {
+              setEditableKeys([]);
+            }
+            return success;
           },
           onChange: setEditableKeys,
         }}
