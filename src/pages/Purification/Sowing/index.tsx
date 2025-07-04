@@ -140,7 +140,7 @@ const SowingList: React.FC = () => {
       console.log('Sending exam data:', examData);
 
       // 发送数据到后端
-      const response = await fetch('https://4664-117-148-63-248.ngrok-free.app/api/Selfing/sow', {
+      const response = await fetch('/api/Selfing/sow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

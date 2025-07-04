@@ -21,7 +21,7 @@ type SowingRecord = {
 type IntroductionRecord = {
   key: number;
   code: string;  // 编号
-  name: string;  // 引种名称
+  varietyName: string;  // 引种名称
   method: string; // 引种方式
   type: string;  // 品种类型
   isRegular: string; // 是否常规
@@ -38,15 +38,15 @@ const IntroductionList: React.FC = () => {
 
   // 从 localStorage 获取初始数据
   const [dataSource, setDataSource] = useState<IntroductionRecord[]>(() => {
-    const savedData = localStorage.getItem('introductionRecords');
-    if (savedData) {
-      return JSON.parse(savedData);
-    }
+    // const savedData = localStorage.getItem('introductionRecords');
+    // if (savedData) {
+    //   return JSON.parse(savedData);
+    // }
     return [
       {
         key: 1,
         code: 'YZ001',
-        name: '京欣1号',
+        varietyName: '京欣1号',
         method: '购买',
         type: '西瓜',
         isRegular: '是',
@@ -56,7 +56,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 2,
         code: 'YZ002',
-        name: '甜王2号',
+        varietyName: '甜王2号',
         method: '交换',
         type: '甜瓜',
         isRegular: '否',
@@ -66,7 +66,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 3,
         code: 'YZ003',
-        name: '金玉3号',
+        varietyName: '金玉3号',
         method: '购买',
         type: '西瓜',
         isRegular: '是',
@@ -76,7 +76,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 4,
         code: 'YZ004',
-        name: '蜜宝4号',
+        varietyName: '蜜宝4号',
         method: '赠送',
         type: '甜瓜',
         isRegular: '否',
@@ -86,7 +86,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 5,
         code: 'YZ005',
-        name: '南瓜王',
+        varietyName: '南瓜王',
         method: '购买',
         type: '南瓜',
         isRegular: '是',
@@ -96,7 +96,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 6,
         code: 'YZ006',
-        name: '甜蜜红玉',
+        varietyName: '甜蜜红玉',
         method: '交换',
         type: '西瓜',
         isRegular: '否',
@@ -106,7 +106,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 7,
         code: 'YZ007',
-        name: '金瓜5号',
+        varietyName: '金瓜5号',
         method: '购买',
         type: '南瓜',
         isRegular: '是',
@@ -116,7 +116,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 8,
         code: 'YZ008',
-        name: '蜜瓜皇后',
+        varietyName: '蜜瓜皇后',
         method: '赠送',
         type: '甜瓜',
         isRegular: '否',
@@ -126,7 +126,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 9,
         code: 'YZ009',
-        name: '翠玉6号',
+        varietyName: '翠玉6号',
         method: '购买',
         type: '西瓜',
         isRegular: '是',
@@ -136,7 +136,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 10,
         code: 'YZ010',
-        name: '金冠7号',
+        varietyName: '金冠7号',
         method: '交换',
         type: '南瓜',
         isRegular: '否',
@@ -146,7 +146,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 11,
         code: 'YZ011',
-        name: '红心甜王',
+        varietyName: '红心甜王',
         method: '购买',
         type: '西瓜',
         isRegular: '是',
@@ -156,7 +156,7 @@ const IntroductionList: React.FC = () => {
       {
         key: 12,
         code: 'YZ012',
-        name: '蜜瓜新秀',
+        varietyName: '蜜瓜新秀',
         method: '赠送',
         type: '甜瓜',
         isRegular: '否',
@@ -177,7 +177,7 @@ const IntroductionList: React.FC = () => {
     form.setFieldsValue({
       plantingCode: `TZ-${Math.floor(Math.random() * 1000)}`,
       code: record.code,
-      name: record.name,
+      name: record.varietyName,
       planCode: new Date().getFullYear().toString(),
       method: record.method,
       type: record.type,
@@ -233,6 +233,7 @@ const IntroductionList: React.FC = () => {
         body: formData,
       });
       const result = await response.json();
+      console.log(result);
       if (result && Array.isArray(result.data)) {
         // 自动生成key，拼接到现有数据
         const newData = result.data.map((item: any, idx: number) => ({
@@ -246,6 +247,7 @@ const IntroductionList: React.FC = () => {
       }
     } catch (error) {
       message.error('导入失败，请重试');
+      console.log('导入错误:', error);
     }
     return false;
   };
@@ -255,7 +257,7 @@ const IntroductionList: React.FC = () => {
     const ws = XLSXUtils.json_to_sheet(
       dataSource.map(item => ({
         '编号': item.code,
-        '引种名称': item.name,
+        '引种名称': item.varietyName,
         '引种方式': item.method,
         '品种类型': item.type,
         '是否常规': item.isRegular,
@@ -268,24 +270,35 @@ const IntroductionList: React.FC = () => {
     XLSXWriteFile(wb, '引种记录.xlsx');
   };
 
-  // 跳转到自交系纯化页面
-  const handlePurification = (record: IntroductionRecord) => {
-    Modal.confirm({
-      title: '确认转入',
-      content: `确定要将编号为 ${record.code} 的记录转入自交系纯化吗？`,
-      onOk: () => {
-        const purificationRecord = {
-          ...record,
-          status: '未完成',
-          plantingCode: `P${Date.now()}`,
-          sowingAmount: 0,
-          planCode: '',
-          sowingTime: new Date().toISOString().split('T')[0],
-        };
-        history.push('/purification/list', { purificationRecord });
-        message.success('已转入自交系纯化');
-      },
-    });
+  // 转入自交系纯化
+  const handlePurification = async (record: IntroductionRecord) => {
+    try {
+      const response = await fetch('/api/introduction/purification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record),
+      });
+      console.log(JSON.stringify(record));
+      const result = await response.json();
+      // if (!Array.isArray(result.data)) {
+      //   message.error('后端未返回有效数组');
+      //   return;
+      // }
+      console.log(result.data);
+      // 追加到 localStorage
+      const existing = localStorage.getItem('purificationRecords');
+      const purificationRecords = existing ? JSON.parse(existing) : [];
+      const baseKey = Date.now();
+      const newRecords = result.data.map((item, idx) => ({
+        ...item,
+        key: baseKey + idx,
+      }));
+      const updated = [...purificationRecords, ...newRecords];
+      localStorage.setItem('purificationRecords', JSON.stringify(updated));
+      message.success('转入自交系纯化成功');
+    } catch (e) {
+      message.error('转入失败');
+    }
   };
 
   const columns: ProColumns<IntroductionRecord>[] = [
@@ -295,7 +308,7 @@ const IntroductionList: React.FC = () => {
     },
     {
       title: '引种名称',
-      dataIndex: 'name',
+      dataIndex: 'varietyName',
     },
     {
       title: '引种方式',
@@ -372,7 +385,7 @@ const IntroductionList: React.FC = () => {
         >
           删除
         </Button>,
-      ],
+      ].filter(Boolean),
     },
   ];
 
@@ -487,7 +500,7 @@ const IntroductionList: React.FC = () => {
           </Form.Item>
           <Form.Item
             label="品种名称"
-            name="name"
+            name="varietyName"
           >
             <Input disabled />
           </Form.Item>

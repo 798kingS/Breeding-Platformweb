@@ -163,7 +163,7 @@ const handleGenerateReport = async () => {
     console.log(JSON.stringify(sowingPlanData));
 
     // 发送数据到后端
-    const response = await fetch('https://0208-117-148-63-248.ngrok-free.app/api/seed/sow', {
+    const response = await fetch('/api/seed/sow', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
