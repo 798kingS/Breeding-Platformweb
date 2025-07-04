@@ -54,6 +54,7 @@
     "@umijs/route-utils": "^2.2.2",
     "antd": "^5.13.2",
     "antd-style": "^3.6.1",
+    "axios": "^1.10.0",
     "classnames": "^2.5.1",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.3",
@@ -70,6 +71,7 @@
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^15.6.1",
     "recharts": "^2.15.1",
+    "tesseract.js": "^6.0.1",
     "uuid": "^11.1.0",
     "xlsx": "^0.18.5"
   },

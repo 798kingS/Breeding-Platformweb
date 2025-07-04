@@ -142,6 +142,12 @@ export default [
     ],
   },
   {
+    name: '图片识别',
+    icon: 'camera',
+    path: '/image-identify',
+    component: './ImageIdentify',
+  },
+  {
     path: '/',
     redirect: '/welcome',
   },
