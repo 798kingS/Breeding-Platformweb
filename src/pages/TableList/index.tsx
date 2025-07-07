@@ -710,6 +710,32 @@ const TableList: React.FC = () => {
     }
   };
 
+  const [tableData, setTableData] = useState<API.RuleListItem[]>([]);
+  const [searchValues, setSearchValues] = useState<Partial<API.RuleListItem>>({});
+  const fetchTableData = async () => {
+    try {
+      const response = await fetch('/api/seed/getSeed', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      const result = await response.json();
+      console.log('Fetched table data:', result);
+      if (Array.isArray(result.data)) {
+        setTableData(result.data); // 只覆盖，不叠加
+      } else {
+        setTableData([]);
+      }
+    } catch (error) {
+      message.error('获取表格数据失败');
+      setTableData([]);
+    }
+  };
+  useEffect(() => {
+    fetchTableData();
+  }, []);
   const handleExportHybridization = async () => {
     if (hybridizationList.length === 0) {
       message.warning('配组表为空');
@@ -724,6 +750,7 @@ const TableList: React.FC = () => {
       const result = await res.json();
       if (result && (result.msg || result.code === 200)) {
         message.success('配组表已导出并保存到数据库');
+        await fetchTableData(); // 刷新表格数据
         setHybridizationList([]);
         setHybridModalOpen(false);
         localStorage.removeItem('hybridizationList');
@@ -1001,34 +1028,35 @@ const TableList: React.FC = () => {
     }
   };
 
-  const [tableData, setTableData] = useState<API.RuleListItem[]>([]);
-  const [searchValues, setSearchValues] = useState<Partial<API.RuleListItem>>({});
+  // const [tableData, setTableData] = useState<API.RuleListItem[]>([]);
+  // const [searchValues, setSearchValues] = useState<Partial<API.RuleListItem>>({});
 
-  // 页面加载时请求后端数据
-  useEffect(() => {
-    const fetchTableData = async () => {
-      try {
-        const response = await fetch('/api/seed/getSeed', {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        const result = await response.json();
-        console.log('Fetched table data:', result);
-        if (Array.isArray(result.data)) {
-          setTableData(result.data); // 只覆盖，不叠加
-        } else {
-          setTableData([]);
-        }
-      } catch (error) {
-        message.error('获取表格数据失败');
-        setTableData([]);
-      }
-    };
-    fetchTableData();
-  }, []);
+  
+  // // 页面加载时请求后端数据
+  // useEffect(() => {
+  //   const fetchTableData = async () => {
+  //     try {
+  //       const response = await fetch('/api/seed/getSeed', {
+  //         method: 'GET',
+  //         headers: {
+  //           'Accept': 'application/json',
+  //           'Content-Type': 'application/json',
+  //         },
+  //       });
+  //       const result = await response.json();
+  //       console.log('Fetched table data:', result);
+  //       if (Array.isArray(result.data)) {
+  //         setTableData(result.data); // 只覆盖，不叠加
+  //       } else {
+  //         setTableData([]);
+  //       }
+  //     } catch (error) {
+  //       message.error('获取表格数据失败');
+  //       setTableData([]);
+  //     }
+  //   };
+  //   fetchTableData();
+  // }, []);
 
   return (
     <PageContainer>

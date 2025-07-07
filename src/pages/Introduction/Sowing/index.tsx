@@ -94,10 +94,22 @@ const SowingList: React.FC = () => {
     Modal.confirm({
       title: '确认删除',
       content: `确定要删除种植编号为 ${record.plantingCode} 的记录吗？`,
-      onOk: () => {
-        const newDataSource = dataSource.filter(item => item.key !== record.key);
-        setDataSource(newDataSource);
-        message.success('删除成功');
+      onOk: async () => {
+        try {
+          const res = await fetch(`/api/introduction/introductionSowDelete?plantid=${record.plantingCode}`, {
+            method: 'DELETE',
+          });
+          const result = await res.json();
+          if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+            const newDataSource = dataSource.filter(item => item.plantingCode !== record.plantingCode);
+            setDataSource(newDataSource);
+            message.success('删除成功');
+          } else {
+            message.error(result?.msg || '删除失败');
+          }
+        } catch (e) {
+          message.error('删除失败，请重试');
+        }
       },
     });
   };

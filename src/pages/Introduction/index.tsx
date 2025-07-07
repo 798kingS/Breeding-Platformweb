@@ -4,18 +4,7 @@ import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { useRef, useState, useEffect } from 'react';
 import { Button, message, Upload, Modal, Form, Input, InputNumber } from 'antd';
 import { PlusOutlined, ImportOutlined, ExportOutlined } from '@ant-design/icons';
-import { utils as XLSXUtils, read as XLSXRead, writeFile as XLSXWriteFile } from 'xlsx';
-import { history } from '@umijs/max';
-import moment from 'moment';
-
-// 定义播种记录类型
-type SowingRecord = {
-  plantingCode: string;// 种植编号
-  code: string;      // 编号
-  name: string; // 品种名称
-  sowingAmount: number;  // 播种数量
-  planCode: string; // 计划编号
-};
+import { utils as XLSXUtils, writeFile as XLSXWriteFile } from 'xlsx';
 
 // 定义表格数据类型
 type IntroductionRecord = {
@@ -26,16 +15,18 @@ type IntroductionRecord = {
   type: string;  // 品种类型
   isRegular: string; // 是否常规
   generation: string;  // 世代
-  time: string;  // 引种时间
+  time: string;
+  plantingCode: string; // 种植编号
+  // 引种时间
 };
 
 const IntroductionList: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
   const [sowingModalVisible, setSowingModalVisible] = useState(false);
-  const [currentRecord, setCurrentRecord] = useState<IntroductionRecord | null>(null);
   const [form] = Form.useForm();
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [filteredData, setFilteredData] = useState<IntroductionRecord[]>([]);
 
   // 从 localStorage 获取初始数据
   const [dataSource, setDataSource] = useState<IntroductionRecord[]>(() => {
@@ -48,6 +39,7 @@ const IntroductionList: React.FC = () => {
     ];
   });
 
+
   // 页面加载时从后端获取引种记录
   useEffect(() => {
     const fetchIntroductionRecords = async () => {
@@ -57,13 +49,16 @@ const IntroductionList: React.FC = () => {
         const result = await response.json();
         if (Array.isArray(result.data)) {
           setDataSource(result.data);
+          setFilteredData(result.data); // 初始化filteredData
           console.log('获取引种记录:', result.data);
         } else {
           setDataSource([]);
+          setFilteredData([]);
         }
       } catch (error) {
         message.error('获取引种记录失败');
         setDataSource([]);
+        setFilteredData([]);
       }
     };
     fetchIntroductionRecords();
@@ -94,7 +89,6 @@ const IntroductionList: React.FC = () => {
   const handleGenerateTestRecord = async () => {
     try {
       const values = await form.validateFields();
-      const sowingAmount = values.sowingAmount || 1;
       // 创建播种表数据，包含所有字段
       const sowingTableData = {
         plantingCode: values.plantingCode,
@@ -194,14 +188,34 @@ const IntroductionList: React.FC = () => {
     }
   };
 
+  // dataSource变化时同步filteredData
+  useEffect(() => {
+    setFilteredData(dataSource);
+  }, [dataSource]);
+
+  // 本地过滤函数
+  const handleSearch = (values: any) => {
+    let result = dataSource;
+    if (values.code) result = result.filter(item => (item.code ?? '').toString().includes(values.code));
+    if (values.name) result = result.filter(item => (item.name ?? '').toString().includes(values.name));
+    if (values.method) result = result.filter(item => item.method === values.method);
+    if (values.type) result = result.filter(item => item.type === values.type);
+    if (values.isRegular) result = result.filter(item => item.isRegular === values.isRegular);
+    if (values.generation) result = result.filter(item => (item.generation ?? '').toString().includes(values.generation));
+    if (values.time) result = result.filter(item => (item.time ?? '').toString().includes(values.time));
+    setFilteredData(result);
+  };
+
   const columns: ProColumns<IntroductionRecord>[] = [
     {
       title: '编号',
       dataIndex: 'code',
+      editable: () => true,
     },
     {
       title: '引种名称',
       dataIndex: 'name',
+      editable: () => true,
     },
     {
       title: '引种方式',
@@ -212,6 +226,7 @@ const IntroductionList: React.FC = () => {
         '赠送': { text: '赠送' },
         '其他': { text: '其他' },
       },
+      editable: () => true,
     },
     {
       title: '品种类型',
@@ -221,6 +236,7 @@ const IntroductionList: React.FC = () => {
         '甜瓜': { text: '甜瓜' },
         '南瓜': { text: '南瓜' },
       },
+      editable: () => true,
     },
     {
       title: '是否常规',
@@ -229,15 +245,18 @@ const IntroductionList: React.FC = () => {
         '是': { text: '是' },
         '否': { text: '否' },
       },
+      editable: () => true,
     },
     {
       title: '世代',
       dataIndex: 'generation',
+      editable: () => true,
     },
     {
       title: '引种时间',
       dataIndex: 'time',
       valueType: 'date',
+      editable: () => true,
     },
     {
       title: '操作',
@@ -280,14 +299,13 @@ const IntroductionList: React.FC = () => {
               cancelText: '取消',
               onOk: async () => {
                 try {
-                  const res = await fetch('/api/introduction/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ key: record.key }),
+                  const res = await fetch(`/api/introduction/introductionDelete?plantid=${record.plantingCode
+                  }`, {
+                    method: 'DELETE',
                   });
                   const result = await res.json();
                   if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
-                    setDataSource(dataSource.filter(item => item.key !== record.key));
+                    setDataSource(dataSource.filter(item => item.plantingCode !== record.plantingCode ));
                     message.success('删除成功');
                   } else {
                     message.error(result?.msg || '删除失败');
@@ -338,7 +356,10 @@ const IntroductionList: React.FC = () => {
             <PlusOutlined /> 新增
           </Button>,
         ]}
-        dataSource={dataSource}
+       
+        dataSource={filteredData}
+        onSubmit={handleSearch}
+        onReset={() => setFilteredData(dataSource)}
         editable={{
           type: 'multiple',
           editableKeys,
@@ -387,7 +408,7 @@ const IntroductionList: React.FC = () => {
               }
             }
           },
-          onCancel: (key, newLine) => {
+          onCancel: async (key, newLine) => {
             if (newLine) {
               setDataSource(dataSource.filter(item => item.key !== key));
             }
@@ -500,7 +521,7 @@ const IntroductionList: React.FC = () => {
         onOpenChange={setCreateModalOpen}
         onFinish={async (values) => {
           try {
-            const response = await fetch('/api/introduction/add', {
+            const response = await fetch('/api/introduction/introductionAdd', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(values),
