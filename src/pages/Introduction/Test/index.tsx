@@ -2,14 +2,8 @@
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { useRef, useState, useEffect } from 'react';
-import { useLocation } from '@umijs/max';
 import { Button, Modal, message } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
-
-interface LocationState {
-  testRecord?: TestRecord;
-  isNewRecord?: boolean;
-}
 
 type TestRecord = {
   key: number;
@@ -36,40 +30,28 @@ type TestRecord = {
 const TestList: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
-  const location = useLocation();
   const [dataSource, setDataSource] = useState<TestRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  // 从 localStorage 获取数据并处理新记录
+  // 页面加载时从后端获取考种记录
   useEffect(() => {
-    const state = location.state as LocationState;
-    const { testRecord, isNewRecord } = state || {};
-    
-    // 从 localStorage 获取现有数据
-    const savedData = localStorage.getItem('testRecords');
-    const existingRecords: TestRecord[] = savedData ? JSON.parse(savedData) : [];
-    
-    if (testRecord && isNewRecord) {
-      // 检查是否已存在相同种植编号的记录
-      const existingIndex = existingRecords.findIndex(
-        item => item.plantingCode === testRecord.plantingCode
-      );
-      
-      if (existingIndex >= 0) {
-        // 如果已存在，则更新该记录
-        existingRecords[existingIndex] = testRecord;
-      } else {
-        // 如果不存在，则添加新记录
-        existingRecords.push(testRecord);
+    const fetchTestRecords = async () => {
+      try {
+        const response = await fetch('/api/introduction-test-records');
+        if (!response.ok) throw new Error('网络错误');
+        const result = await response.json();
+        if (Array.isArray(result.data)) {
+          setDataSource(result.data);
+        } else {
+          setDataSource([]);
+        }
+      } catch (error) {
+        message.error('获取考种记录失败');
+        setDataSource([]);
       }
-      
-      // 保存更新后的记录到 localStorage
-      localStorage.setItem('testRecords', JSON.stringify(existingRecords));
-    }
-    
-    // 更新数据源
-    setDataSource(existingRecords);
-  }, [location.state]);
+    };
+    fetchTestRecords();
+  }, []);
 
   // 数据变化时保存到 localStorage
   useEffect(() => {

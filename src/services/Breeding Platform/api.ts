@@ -52,52 +52,18 @@ export async function rule(
   },
   options?: { [key: string]: any },
 ) {
-  // 处理搜索条件
-  let filteredData = [...mockData];
-
-  // 根据搜索参数过滤数据
-  Object.keys(params).forEach(key => {
-    if (params[key] && key !== 'current' && key !== 'pageSize') {
-      filteredData = filteredData.filter(item => {
-        // 处理范围搜索
-        if (key.includes('Min')) {
-          const realKey = key.replace('Min', '');
-          const itemValue = item[realKey as keyof typeof item];
-          return typeof itemValue === 'number' ? itemValue >= params[key] : true;
-        }
-        if (key.includes('Max')) {
-          const realKey = key.replace('Max', '');
-          const itemValue = item[realKey as keyof typeof item];
-          return typeof itemValue === 'number' ? itemValue <= params[key] : true;
-        }
-        // 处理普通搜索
-        const itemValue = item[key as keyof typeof item];
-        if (typeof itemValue === 'string') {
-          return itemValue.includes(params[key]);
-        }
-        return itemValue === params[key];
-      });
-    }
-  });
-
-  // 计算分页
-  const pageSize = params.pageSize || 10;
-  const current = params.current || 1;
-  const start = (current - 1) * pageSize;
-  const end = start + pageSize;
-
-  return {
-    data: filteredData.slice(start, end),
-    total: filteredData.length,
-    success: true,
-    pageSize,
-    current,
-  };
+    return request('/api/rule', {
+      method: 'GET',
+      params: {
+        ...params,
+      },
+      ...(options || {}),
+    });
 }
 
 /** 更新规则 PUT /api/rule */
 export async function updateRule(options?: { [key: string]: any }) {
-  return request<API.RuleListItem>('/api/rule', {
+  return request<API.RuleListItem>('/api/rul', {
     method: 'POST',
     data:{
       method: 'update',
@@ -201,4 +167,105 @@ export async function queryAI(messages: { role: string; content: string }[]) {
       error: error instanceof Error ? error.message : '未知错误',
     };
   }
+}
+
+/** 保存播种记录 POST /api/seed/sow */
+export async function saveSowingRecord(body: {
+  id: string;
+  code: string;
+  seedNumber: string;
+  varietyName: string;
+  sowingCount: number;
+  planNumber: string;
+  createTime: string;
+}, options?: { [key: string]: any }) {
+  return request<Record<string, any>>('/api/seed/sow', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 保存留种记录 POST /api/seed/save */
+export async function saveSeedRecord(body: {
+  key?: number;
+  photo1?: string;
+  photo2?: string;
+  varietyName: string;
+  type: string;
+  introductionYear: string;
+  source: string;
+  breedingType: string;
+  seedNumber: string;
+  plantingYear: string;
+  resistance: string;
+  fruitCharacteristics: string;
+  floweringPeriod: string;
+  fruitCount: number;
+  yield: number;
+  fruitShape: string;
+  skinColor: string;
+  fleshColor: string;
+  singleFruitWeight: number;
+  fleshThickness: number;
+  sugarContent: number;
+  texture: string;
+  overallTaste: string;
+  combiningAbility: string;
+  hybridization: string;
+  saveTime: string;
+}, options?: { [key: string]: any }) {
+  return request<Record<string, any>>('/api/seed/reserve', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 检查留种记录是否存在 GET /api/seed/check */
+export async function checkSeedExists(params: {
+  seedNumber: string;
+}, options?: { [key: string]: any }) {
+  return request<{
+    exists: boolean;
+    message?: string;
+  }>('/api/seed/reserve', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 删除播种记录 DELETE /api/seed/sow */
+export async function deleteSowingRecord(params: {
+  plantid: string;
+}, options?: { [key: string]: any }) {
+  return request<Record<string, any>>('/api/seed/sowdelete', {
+    method: 'DELETE',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 批量删除播种记录 DELETE /api/seed/sow/batch */
+export async function batchDeleteSowingRecords(params: {
+  ids: string[];
+}, options?: { [key: string]: any }) {
+  return request<Record<string, any>>('/api/seed/sow/batch', {
+    method: 'DELETE',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
 }

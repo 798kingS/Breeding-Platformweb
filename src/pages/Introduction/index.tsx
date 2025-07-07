@@ -1,5 +1,5 @@
 //引种管理页面/引种记录
-import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ModalForm, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { useRef, useState, useEffect } from 'react';
 import { Button, message, Upload, Modal, Form, Input, InputNumber } from 'antd';
@@ -21,7 +21,7 @@ type SowingRecord = {
 type IntroductionRecord = {
   key: number;
   code: string;  // 编号
-  varietyName: string;  // 引种名称
+  name: string;  // 引种名称
   method: string; // 引种方式
   type: string;  // 品种类型
   isRegular: string; // 是否常规
@@ -35,6 +35,7 @@ const IntroductionList: React.FC = () => {
   const [sowingModalVisible, setSowingModalVisible] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<IntroductionRecord | null>(null);
   const [form] = Form.useForm();
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // 从 localStorage 获取初始数据
   const [dataSource, setDataSource] = useState<IntroductionRecord[]>(() => {
@@ -43,128 +44,30 @@ const IntroductionList: React.FC = () => {
     //   return JSON.parse(savedData);
     // }
     return [
-      {
-        key: 1,
-        code: 'YZ001',
-        varietyName: '京欣1号',
-        method: '购买',
-        type: '西瓜',
-        isRegular: '是',
-        generation: 'F2',
-        time: '2024-03-15',
-      },
-      {
-        key: 2,
-        code: 'YZ002',
-        varietyName: '甜王2号',
-        method: '交换',
-        type: '甜瓜',
-        isRegular: '否',
-        generation: 'F1',
-        time: '2024-03-16',
-      },
-      {
-        key: 3,
-        code: 'YZ003',
-        varietyName: '金玉3号',
-        method: '购买',
-        type: '西瓜',
-        isRegular: '是',
-        generation: 'F2',
-        time: '2024-03-17',
-      },
-      {
-        key: 4,
-        code: 'YZ004',
-        varietyName: '蜜宝4号',
-        method: '赠送',
-        type: '甜瓜',
-        isRegular: '否',
-        generation: 'F3',
-        time: '2024-03-18',
-      },
-      {
-        key: 5,
-        code: 'YZ005',
-        varietyName: '南瓜王',
-        method: '购买',
-        type: '南瓜',
-        isRegular: '是',
-        generation: 'F1',
-        time: '2024-03-19',
-      },
-      {
-        key: 6,
-        code: 'YZ006',
-        varietyName: '甜蜜红玉',
-        method: '交换',
-        type: '西瓜',
-        isRegular: '否',
-        generation: 'F2',
-        time: '2024-03-20',
-      },
-      {
-        key: 7,
-        code: 'YZ007',
-        varietyName: '金瓜5号',
-        method: '购买',
-        type: '南瓜',
-        isRegular: '是',
-        generation: 'F3',
-        time: '2024-03-21',
-      },
-      {
-        key: 8,
-        code: 'YZ008',
-        varietyName: '蜜瓜皇后',
-        method: '赠送',
-        type: '甜瓜',
-        isRegular: '否',
-        generation: 'F2',
-        time: '2024-03-22',
-      },
-      {
-        key: 9,
-        code: 'YZ009',
-        varietyName: '翠玉6号',
-        method: '购买',
-        type: '西瓜',
-        isRegular: '是',
-        generation: 'F1',
-        time: '2024-03-23',
-      },
-      {
-        key: 10,
-        code: 'YZ010',
-        varietyName: '金冠7号',
-        method: '交换',
-        type: '南瓜',
-        isRegular: '否',
-        generation: 'F2',
-        time: '2024-03-24',
-      },
-      {
-        key: 11,
-        code: 'YZ011',
-        varietyName: '红心甜王',
-        method: '购买',
-        type: '西瓜',
-        isRegular: '是',
-        generation: 'F3',
-        time: '2024-03-25',
-      },
-      {
-        key: 12,
-        code: 'YZ012',
-        varietyName: '蜜瓜新秀',
-        method: '赠送',
-        type: '甜瓜',
-        isRegular: '否',
-        generation: 'F1',
-        time: '2024-03-26',
-      }
+
     ];
   });
+
+  // 页面加载时从后端获取引种记录
+  useEffect(() => {
+    const fetchIntroductionRecords = async () => {
+      try {
+        const response = await fetch('/api/introduction/getIntroduction');
+        if (!response.ok) throw new Error('网络错误');
+        const result = await response.json();
+        if (Array.isArray(result.data)) {
+          setDataSource(result.data);
+          console.log('获取引种记录:', result.data);
+        } else {
+          setDataSource([]);
+        }
+      } catch (error) {
+        message.error('获取引种记录失败');
+        setDataSource([]);
+      }
+    };
+    fetchIntroductionRecords();
+  }, []);
 
   // 数据变化时保存到 localStorage
   useEffect(() => {
@@ -177,7 +80,7 @@ const IntroductionList: React.FC = () => {
     form.setFieldsValue({
       plantingCode: `TZ-${Math.floor(Math.random() * 1000)}`,
       code: record.code,
-      name: record.varietyName,
+      name: record.name,
       planCode: new Date().getFullYear().toString(),
       method: record.method,
       type: record.type,
@@ -192,31 +95,37 @@ const IntroductionList: React.FC = () => {
     try {
       const values = await form.validateFields();
       const sowingAmount = values.sowingAmount || 1;
-
-      // 创建多个播种记录，数量等于用户输入的播种数量
-      const sowingRecords = [];
-      for (let i = 0; i < sowingAmount; i++) {
-        const sowingRecord = {
-          ...values,
-          key: Date.now() + i,
-          sowingTime: new Date().toISOString().split('T')[0],
-          status: '未生成考种记录',
-          recordIndex: i + 1, // 添加记录索引，用于区分同一种子的不同记录
-        };
-        sowingRecords.push(sowingRecord);
+      // 创建播种表数据，包含所有字段
+      const sowingTableData = {
+        plantingCode: values.plantingCode,
+        code: values.code,
+        name: values.name,
+        method: values.method,
+        type: values.type,
+        isRegular: values.isRegular,
+        generation: values.generation,
+        introductionTime: values.introductionTime,
+        sowingAmount: values.sowingAmount,
+        planCode: values.planCode,
+        sowingTime: new Date().toISOString().split('T')[0],
+      };
+      // 发送到后端
+      try {
+        const response = await fetch('/api/introduction/sow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sowingTableData),
+        });
+        if (response.ok) {
+          message.success('播种表已生成并保存到数据库');
+          setSowingModalVisible(false);
+          form.resetFields();
+        } else {
+          message.error('生成播种表失败');
+        }
+      } catch (error) {
+        message.error('网络错误，请重试');
       }
-
-      // 保存播种记录到 localStorage
-      const savedSowingRecords = localStorage.getItem('sowingRecords') || '[]';
-      const existingSowingRecords = JSON.parse(savedSowingRecords);
-      const updatedSowingRecords = [...existingSowingRecords, ...sowingRecords];
-      localStorage.setItem('sowingRecords', JSON.stringify(updatedSowingRecords));
-
-      // 跳转到播种记录页面
-      history.push('/introduction/sowing', { sowingRecords });
-      message.success(`已成功生成${sowingAmount}条播种记录！`);
-      setSowingModalVisible(false);
-      form.resetFields();
     } catch (error) {
       message.error('表单验证失败');
     }
@@ -227,27 +136,24 @@ const IntroductionList: React.FC = () => {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      // 假设后端接口为 /api/import-introduction，返回格式为 { data: IntroductionRecord[] }
-      const response = await fetch('api/introduction/ExcelImport', {
+      const response = await fetch('/api/introduction/ExcelImport', {
         method: 'POST',
         body: formData,
       });
       const result = await response.json();
-      console.log(result);
-      if (result && Array.isArray(result.data)) {
-        // 自动生成key，拼接到现有数据
-        const newData = result.data.map((item: any, idx: number) => ({
-          ...item,
-          key: dataSource.length + idx + 1,
-        }));
-        setDataSource([...dataSource, ...newData]);
+      if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
         message.success('导入成功');
+        // 导入成功后刷新数据
+        const fetchRes = await fetch('/api/introduction/getIntroduction');
+        const fetchJson = await fetchRes.json();
+        if (Array.isArray(fetchJson.data)) {
+          setDataSource(fetchJson.data);
+        }
       } else {
-        message.error('导入失败，后端未返回有效数据');
+        message.error(result?.msg || '导入失败');
       }
     } catch (error) {
       message.error('导入失败，请重试');
-      console.log('导入错误:', error);
     }
     return false;
   };
@@ -257,7 +163,7 @@ const IntroductionList: React.FC = () => {
     const ws = XLSXUtils.json_to_sheet(
       dataSource.map(item => ({
         '编号': item.code,
-        '引种名称': item.varietyName,
+        '引种名称': item.name,
         '引种方式': item.method,
         '品种类型': item.type,
         '是否常规': item.isRegular,
@@ -278,24 +184,11 @@ const IntroductionList: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(record),
       });
-      console.log(JSON.stringify(record));
-      const result = await response.json();
-      // if (!Array.isArray(result.data)) {
-      //   message.error('后端未返回有效数组');
-      //   return;
-      // }
-      console.log(result.data);
-      // 追加到 localStorage
-      const existing = localStorage.getItem('purificationRecords');
-      const purificationRecords = existing ? JSON.parse(existing) : [];
-      const baseKey = Date.now();
-      const newRecords = result.data.map((item, idx) => ({
-        ...item,
-        key: baseKey + idx,
-      }));
-      const updated = [...purificationRecords, ...newRecords];
-      localStorage.setItem('purificationRecords', JSON.stringify(updated));
-      message.success('转入自交系纯化成功');
+      if (response.ok) {
+        message.success('转入自交系纯化成功');
+      } else {
+        message.error('转入自交系纯化失败');
+      }
     } catch (e) {
       message.error('转入失败');
     }
@@ -308,7 +201,7 @@ const IntroductionList: React.FC = () => {
     },
     {
       title: '引种名称',
-      dataIndex: 'varietyName',
+      dataIndex: 'name',
     },
     {
       title: '引种方式',
@@ -380,7 +273,30 @@ const IntroductionList: React.FC = () => {
           type="link"
           danger
           onClick={() => {
-            setDataSource(dataSource.filter(item => item.key !== record.key));
+            Modal.confirm({
+              title: '确认删除',
+              content: '确定要删除这条记录吗？',
+              okText: '确认',
+              cancelText: '取消',
+              onOk: async () => {
+                try {
+                  const res = await fetch('/api/introduction/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: record.key }),
+                  });
+                  const result = await res.json();
+                  if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+                    setDataSource(dataSource.filter(item => item.key !== record.key));
+                    message.success('删除成功');
+                  } else {
+                    message.error(result?.msg || '删除失败');
+                  }
+                } catch (e) {
+                  message.error('删除失败，请重试');
+                }
+              },
+            });
           }}
         >
           删除
@@ -417,20 +333,7 @@ const IntroductionList: React.FC = () => {
           <Button
             type="primary"
             key="add"
-            onClick={() => {
-              const newKey = (dataSource[dataSource.length - 1]?.key || 0) + 1;
-              setDataSource([...dataSource, {
-                key: newKey,
-                code: `YZ${String(newKey).padStart(3, '0')}`,
-                name: '',
-                method: '购买',
-                type: '西瓜',
-                isRegular: '是',
-                generation: 'F1',
-                time: new Date().toISOString().split('T')[0],
-              }]);
-              setEditableKeys([newKey]);
-            }}
+            onClick={() => setCreateModalOpen(true)}
           >
             <PlusOutlined /> 新增
           </Button>,
@@ -440,14 +343,54 @@ const IntroductionList: React.FC = () => {
           type: 'multiple',
           editableKeys,
           onChange: setEditableKeys,
-          actionRender: (row, config, defaultDom) => {
-            return [defaultDom.save, defaultDom.cancel];
+          actionRender: (row, config, defaultDom) => [defaultDom.save, defaultDom.cancel],
+          onSave: async (key, row, originRow, newLine) => {
+            if (newLine) {
+              // 新增保存
+              try {
+                const response = await fetch('/api/introduction/add', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(row),
+                });
+                if (response.ok) {
+                  const newData = dataSource.map((item) =>
+                    item.key === key ? { ...item, ...row } : item
+                  );
+                  setDataSource(newData);
+                  message.success('新增成功');
+                } else {
+                  message.error('新增失败');
+                }
+              } catch (e) {
+                message.error('新增失败');
+              }
+            } else {
+              // 编辑保存
+              try {
+                const response = await fetch('/api/introduction/update', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(row),
+                });
+                if (response.ok) {
+                  const newData = dataSource.map((item) =>
+                    item.key === key ? { ...item, ...row } : item
+                  );
+                  setDataSource(newData);
+                  message.success('保存成功');
+                } else {
+                  message.error('保存失败');
+                }
+              } catch (e) {
+                message.error('保存失败');
+              }
+            }
           },
-          onSave: async (key, row) => {
-            const newData = dataSource.map((item) =>
-              item.key === key ? { ...item, ...row } : item
-            );
-            setDataSource(newData);
+          onCancel: (key, newLine) => {
+            if (newLine) {
+              setDataSource(dataSource.filter(item => item.key !== key));
+            }
           },
         }}
         columns={columns}
@@ -500,7 +443,7 @@ const IntroductionList: React.FC = () => {
           </Form.Item>
           <Form.Item
             label="品种名称"
-            name="varietyName"
+            name="name"
           >
             <Input disabled />
           </Form.Item>
@@ -550,6 +493,46 @@ const IntroductionList: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      <ModalForm
+        title="新增引种记录"
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onFinish={async (values) => {
+          try {
+            const response = await fetch('/api/introduction/add', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(values),
+            });
+            if (response.ok) {
+              message.success('新增成功');
+              setCreateModalOpen(false);
+              // 刷新表格
+              const fetchRes = await fetch('/api/introduction/getIntroduction');
+              const fetchJson = await fetchRes.json();
+              if (Array.isArray(fetchJson.data)) {
+                setDataSource(fetchJson.data);
+              }
+              return true;
+            } else {
+              message.error('新增失败');
+              return false;
+            }
+          } catch (e) {
+            message.error('新增失败');
+            return false;
+          }
+        }}
+      >
+        <ProFormText name="code" label="编号" rules={[{ required: true, message: '请输入编号' }]} />
+        <ProFormText name="name" label="引种名称" rules={[{ required: true, message: '请输入引种名称' }]} />
+        <ProFormSelect name="method" label="引种方式" options={[{label:'购买',value:'购买'},{label:'交换',value:'交换'},{label:'赠送',value:'赠送'},{label:'其他',value:'其他'}]} rules={[{ required: true, message: '请选择引种方式' }]} />
+        <ProFormSelect name="type" label="品种类型" options={[{label:'西瓜',value:'西瓜'},{label:'甜瓜',value:'甜瓜'},{label:'南瓜',value:'南瓜'}]} rules={[{ required: true, message: '请选择品种类型' }]} />
+        <ProFormSelect name="isRegular" label="是否常规" options={[{label:'是',value:'是'},{label:'否',value:'否'}]} rules={[{ required: true, message: '请选择是否常规' }]} />
+        <ProFormText name="generation" label="世代" rules={[{ required: true, message: '请输入世代' }]} />
+        <ProFormDatePicker name="time" label="引种时间" rules={[{ required: true, message: '请选择引种时间' }]} fieldProps={{format:'YYYY-MM-DD'}} />
+      </ModalForm>
     </PageContainer>
   );
 };

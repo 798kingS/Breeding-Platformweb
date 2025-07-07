@@ -2,8 +2,8 @@
 import { PageContainer } from '@ant-design/pro-components';
 import { Button, Table, message, Modal } from 'antd';
 import { ExportOutlined, DeleteOutlined } from '@ant-design/icons';
-import React, { useEffect, useState, useRef } from 'react';
-import type { ActionType } from '@ant-design/pro-components';
+import React, { useEffect, useState } from 'react';
+import { deleteSowingRecord, batchDeleteSowingRecords } from '@/services/Breeding Platform/api';
 
 interface SowingRecord {
   key: string;
@@ -17,28 +17,23 @@ interface SowingRecord {
 
 const SowingRecords: React.FC = () => {
   const [sowingList, setSowingList] = useState<SowingRecord[]>([]);
-  const actionRef = useRef<ActionType>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   // 加载数据的函数
-  const loadSowingRecords = () => {
-    const records = localStorage.getItem('sowingRecords');
-    if (records) {
-      try {
-        const parsedRecords = JSON.parse(records);
-        // 过滤掉无效的记录
-        const validRecords = parsedRecords.filter((record: SowingRecord) => 
-          record && 
-          record.code && 
-          record.seedNumber && 
-          record.varietyName
-        );
-        setSowingList(validRecords);
-      } catch (error) {
-        console.error('Error parsing sowing records:', error);
+  const loadSowingRecords = async () => {
+    try {
+      const response = await fetch('/api/seed/getSeedSow');
+      if (!response.ok) throw new Error('网络错误');
+      const result = await response.json();
+      console.log('获取播种记录:', result);
+      if (Array.isArray(result.data)) {
+        setSowingList(result.data);
+      } else {
         setSowingList([]);
       }
-    } else {
+    } catch (error) {
+      console.error('获取播种记录失败:', error);
+      message.error('获取播种记录失败');
       setSowingList([]);
     }
   };
@@ -93,15 +88,19 @@ const SowingRecords: React.FC = () => {
   const handleDelete = (record: SowingRecord) => {
     Modal.confirm({
       title: '确认删除',
-      content: `确定要删除种植编号为 ${record.seedNumber} 的记录吗？`,
+      content: `确定要删除种植编号为 ${record.code} 的记录吗？`,
       onOk: async () => {
         try {
-          const newRecords = sowingList.filter(item => item.key !== record.key);
-          localStorage.setItem('sowingRecords', JSON.stringify(newRecords));
-          setSowingList(newRecords);
+          // 调用后端API删除记录
+          await deleteSowingRecord({ plantid: record.code });
+          
+          // 删除成功后刷新数据
+          await loadSowingRecords();
+          
           message.success('删除成功');
         } catch (error) {
-          message.error('删除失败');
+          console.error('删除失败:', error);
+          message.error('删除失败，请重试');
         }
       },
     });
@@ -119,15 +118,17 @@ const SowingRecords: React.FC = () => {
       content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
       onOk: async () => {
         try {
-          const newRecords = sowingList.filter(
-            item => !selectedRowKeys.includes(item.key)
-          );
-          localStorage.setItem('sowingRecords', JSON.stringify(newRecords));
-          setSowingList(newRecords);
+          // 调用后端API批量删除记录
+          await batchDeleteSowingRecords({ ids: selectedRowKeys as string[] });
+          
+          // 删除成功后刷新数据
+          await loadSowingRecords();
+          
           setSelectedRowKeys([]);
           message.success('批量删除成功');
         } catch (error) {
-          message.error('批量删除失败');
+          console.error('批量删除失败:', error);
+          message.error('批量删除失败，请重试');
         }
       },
     });
@@ -136,8 +137,17 @@ const SowingRecords: React.FC = () => {
   const columns = [
     {
       title: '种植编号',
-      dataIndex: 'code',
+      dataIndex: 'key',
+      valueType: 'text',
+      width: 80,
+      search: false,
+      render: (text, SowingRecord) => SowingRecord.code,
+      sorter: (a, b) => (a.key || 0) - (b.key || 0),
     },
+    // {
+    //   title: '种植编号',
+    //   dataIndex: 'plantingCode',
+    // },
     {
       title: '编号',
       dataIndex: 'seedNumber',
@@ -162,7 +172,7 @@ const SowingRecords: React.FC = () => {
     {
       title: '操作',
       valueType: 'option',
-      render: (_, record: SowingRecord) => [
+      render: (_: any, record: SowingRecord) => [
         <Button
           key="delete"
           type="link"

@@ -14,7 +14,7 @@ type SowingRecord = {
   key: number;
   // 引种记录字段
   code: string;           // 编号
-  name: string;          // 引种名称
+  varietyName: string;          // 引种名称
   method: string;       // 引种方式
   type: string;         // 品种类型
   isRegular: string;    // 是否常规
@@ -54,12 +54,25 @@ const SowingList: React.FC = () => {
   const [dataSource, setDataSource] = useState<SowingRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  // 从 localStorage 获取数据
+  // 页面加载时从后端获取播种记录
   useEffect(() => {
-    const savedData = localStorage.getItem('sowingRecords');
-    if (savedData) {
-      setDataSource(JSON.parse(savedData));
-    }
+    const fetchSowingRecords = async () => {
+      try {
+        const response = await fetch('/api/introduction/getIntroductionSow');
+        if (!response.ok) throw new Error('网络错误');
+        const result = await response.json();
+        if (Array.isArray(result.data)) {
+          console.log('获取到的播种记录:', result.data);
+          setDataSource(result.data);
+        } else {
+          setDataSource([]);
+        }
+      } catch (error) {
+        message.error('获取播种记录失败');
+        setDataSource([]);
+      }
+    };
+    fetchSowingRecords();
   }, []);
 
   // 如果有新的播种记录，添加到数据源
@@ -131,7 +144,7 @@ const SowingList: React.FC = () => {
       key: Date.now(), // 生成新的唯一key
       // 引种记录字段
       code: record.code,
-      name: record.name,
+      varietyName: record.varietyName,
       method: record.method,
       type: record.type,
       isRegular: record.isRegular,
@@ -184,7 +197,7 @@ const SowingList: React.FC = () => {
     },
     {
       title: '品种名称',
-      dataIndex: 'name',
+      dataIndex: 'varietyName',
     },
     {
       title: '引种方式',
@@ -287,6 +300,7 @@ const SowingList: React.FC = () => {
           showTotal: (total) => `共 ${total} 条记录`,
         }}
       />
+
     </PageContainer>
   );
 };

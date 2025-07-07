@@ -1,5 +1,5 @@
 // 种质资源管理
-import { removeRule, rule, updateRule, importExcel } from '@/services/Breeding Platform/api';
+import { removeRule, rule, updateRule, importExcel, saveSowingRecord, saveSeedRecord, checkSeedExists } from '@/services/Breeding Platform/api';
 import { mockData } from '@/services/Breeding Platform/api';
 import { PlusOutlined, ImportOutlined, UploadOutlined, ExportOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns, ProDescriptionsItemProps } from '@ant-design/pro-components';
@@ -20,6 +20,17 @@ import React, { useRef, useState, useEffect } from 'react';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
 import { generateMockData } from '@/services/Breeding Platform/mockData';
+
+// 播种记录类型定义
+export interface SowingRecord {
+  id: string;
+  code: string;
+  seedNumber: string;
+  varietyName: string;
+  sowingCount: number;
+  planNumber: string;
+  createTime: string;
+}
 
 /**
  * @en-US Add node
@@ -57,7 +68,7 @@ const handleAdd = async (fields: API.RuleListItem) => {
       hybridization: fields.hybridization || '',
     };
 
-    mockData.push(newRecord);
+    mockData.push(newRecord as API.RuleListItem);
 
     hide();
     message.success('添加成功');
@@ -128,93 +139,28 @@ const handleRemove = async (selectedRows: API.RuleListItem[]) => {
 const handleGenerateReport = async () => {
   const existingRecords = localStorage.getItem('sowingRecords');
   const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
-
   if (allRecords.length === 0) {
     message.warning('暂无播种记录');
     return;
   }
-
   try {
-    // 显示加载提示
-    const hide = message.loading('正在生成播种计划表...');
-
-    // 准备发送到后端的数据
-    // const sowingPlanData = {
-    //   records: allRecords.map((record: SowingRecord) => ({
-    //     plantingCode: record.code,
-    //     seedNumber: record.seedNumber,
-    //     varietyName: record.varietyName,
-    //     sowingCount: record.sowingCount,
-    //     planNumber: record.planNumber,
-    //     createTime: record.createTime
-    //   }))
-    // };
-
-    const sowingPlanData = 
-      allRecords.map((record: SowingRecord) => ({
-        plantingCode: record.code,
-        seedNumber: record.seedNumber,
-        varietyName: record.varietyName,
-        sowingCount: record.sowingCount,
-        planNumber: record.planNumber,
-        createTime: record.createTime
-      }))
-    
-    console.log(JSON.stringify(sowingPlanData));
-
-    // 发送数据到后端
+    const hide = message.loading('正在提交播种计划表...');
+    // 只上传数据，不生成Excel
     const response = await fetch('/api/seed/sow', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(sowingPlanData),
+      body: JSON.stringify(allRecords),
     });
-
     if (!response.ok) {
-      throw new Error('生成播种计划表失败');
+      throw new Error('提交播种计划表失败');
     }
-
-    // 隐藏加载提示
     hide();
-
-    // 生成CSV文件
-    const headers = [
-      '种植编号',
-      '编号',
-      '品种名称',
-      '播种数量',
-      '计划编号',
-      '创建时间'
-    ];
-
-    const csvContent = [
-      headers.join(','),
-      ...allRecords.map((record: SowingRecord) => [
-        record.code,
-        record.seedNumber,
-        record.varietyName,
-        record.sowingCount,
-        record.planNumber,
-        record.createTime
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute('href', url);
-    link.setAttribute('download', '播种计划表.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    message.success('已生成播种计划表');
+    console.log(JSON.stringify(allRecords))
+    message.success('播种计划表已提交并保存到数据库');
   } catch (error) {
-    message.error('生成播种计划表失败，请重试');
-    console.error('Error generating sowing plan:', error);
+    message.error('提交播种计划表失败，请重试');
   }
 };
 
@@ -300,17 +246,6 @@ const TableList: React.FC = () => {
     setEditingKey('');
   };
 
-  // 更新播种记录的类型定义
-  interface SowingRecord {
-    id: string;
-    code: string;
-    seedNumber: string;
-    varietyName: string;
-    sowingCount: number;
-    planNumber: string;
-    createTime: string;
-  }
-
   // 更新编辑状态的类型
   interface EditableCellProps extends React.HTMLAttributes<HTMLElement> {
     editing: boolean;
@@ -337,7 +272,7 @@ const TableList: React.FC = () => {
       <Input />
     );
 
-        return (
+    return (
       <td {...restProps}>
         {editing ? (
           <Form.Item
@@ -407,14 +342,14 @@ const TableList: React.FC = () => {
     const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
 
     // 只显示与当前品种相关的记录
-    const filteredRecords = allRecords.filter((item: any) => 
-      item.seedNumber === record.seedNumber && 
+    const filteredRecords = allRecords.filter((item: any) =>
+      item.seedNumber === record.seedNumber &&
       item.varietyName === record.varietyName
     );
 
     // 设置播种列表
     setSowingList(filteredRecords);
-    
+
     // 打开模态框
     setSowingModalOpen(true);
 
@@ -431,13 +366,10 @@ const TableList: React.FC = () => {
   };
 
   const handleSowingSubmit = async (values: any) => {
-    console.log('Form submitted with values:', values);
-    
     if (!currentSowingRecord) {
       message.error('未选择品种');
       return;
     }
-
     try {
       // 创建新的播种记录
       const newSowingRecord = {
@@ -449,70 +381,18 @@ const TableList: React.FC = () => {
         planNumber: values.planNumber || '',
         createTime: new Date().toISOString(),
       };
-
-      console.log('Creating new sowing record:', newSowingRecord);
-
-      // 从localStorage获取现有记录
+      // 本地保存
       const existingRecords = localStorage.getItem('sowingRecords');
       const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
-
-      // 添加新记录到数组开头，保持最新记录在前
       allRecords.unshift(newSowingRecord);
-
-      // 更新 localStorage
       localStorage.setItem('sowingRecords', JSON.stringify(allRecords));
-
       // 只显示与当前品种相关的记录
-      const filteredRecords = allRecords.filter((item: any) => 
-        item.seedNumber === currentSowingRecord.seedNumber && 
+      const filteredRecords = allRecords.filter((item: any) =>
+        item.seedNumber === currentSowingRecord.seedNumber &&
         item.varietyName === currentSowingRecord.varietyName
       );
-
-      // 更新当前显示的播种列表
       setSowingList(filteredRecords);
-
-      // 创建考种记载表记录
-      const newExamRecord = {
-        key: mockData.length + Math.random(),
-        photo: currentSowingRecord.photo1 || '',
-        photo1: currentSowingRecord.photo1 || '',
-        photo2: currentSowingRecord.photo2 || '',
-        varietyName: currentSowingRecord.varietyName || '',
-        type: currentSowingRecord.type || '',
-        introductionYear: new Date().getFullYear().toString(),
-        source: '播种记录',
-        breedingType: currentSowingRecord.breedingType || 'regular',
-        seedNumber: values.code,
-        plantingYear: new Date().getFullYear().toString(),
-        resistance: currentSowingRecord.resistance || '',
-        fruitCharacteristics: '',
-        floweringPeriod: '',
-        fruitCount: 0,
-        yield: 0,
-        fruitShape: '',
-        skinColor: '',
-        fleshColor: '',
-        singleFruitWeight: 0,
-        fleshThickness: 0,
-        sugarContent: 0,
-        texture: '',
-        overallTaste: '',
-        combiningAbility: '',
-        hybridization: ''
-      };
-
-      console.log('Creating new exam record:', newExamRecord);
-
-      // 添加到考种记载表
-      mockData.push(newExamRecord);
-
-      message.success('已添加到播种表和考种记载表');
-
-      // 刷新表格数据
-      if (actionRef.current) {
-        actionRef.current.reload();
-      }
-
+      message.success('已添加到播种表');
       // 重置表单字段，但保留当前品种信息
       form.setFieldsValue({
         code: `TZ-${currentSowingRecord.key || 1}`,
@@ -522,7 +402,6 @@ const TableList: React.FC = () => {
         planNumber: '',
       });
     } catch (error) {
-      console.error('添加播种记录失败:', error);
       message.error('添加失败，请重试');
     }
   };
@@ -648,45 +527,46 @@ const TableList: React.FC = () => {
 
   // 更新保存函数
   const handleSaveSeed = async (record: API.RuleListItem) => {
-    const hide = message.loading('正在保存到留种页面');
     try {
-      const savedRecord: SavedSeedRecord = {
-        ...record as unknown as SavedSeedRecord,
+      const savedRecord = {
+        key: record.key,
+        photo1: record.photo1 || '',
+        photo2: record.photo2 || '',
+        varietyName: record.varietyName || '',
+        type: record.type || '',
+        introductionYear: record.introductionYear || '',
+        source: record.source || '',
+        breedingType: record.breedingType || 'regular',
+        seedNumber: record.seedNumber || '',
+        plantingYear: record.plantingYear || '',
+        resistance: record.resistance || '',
+        fruitCharacteristics: record.fruitCharacteristics || '',
+        floweringPeriod: record.floweringPeriod || '',
+        fruitCount: record.fruitCount || 0,
+        yield: record.yield || 0,
+        fruitShape: record.fruitShape || '',
+        skinColor: record.skinColor || '',
+        fleshColor: record.fleshColor || '',
+        singleFruitWeight: record.singleFruitWeight || 0,
+        fleshThickness: record.fleshThickness || 0,
+        sugarContent: record.sugarContent || 0,
+        texture: record.texture || '',
+        overallTaste: record.overallTaste || '',
+        combiningAbility: record.combiningAbility || '',
+        hybridization: record.hybridization || '',
         saveTime: new Date().toISOString(),
       };
-
-      const existingRecords = localStorage.getItem('savedSeeds');
-      const records = existingRecords ? JSON.parse(existingRecords) : [];
-
-      const isDuplicate = records.some((item: SavedSeedRecord) =>
-        item.seedNumber === savedRecord.seedNumber
-      );
-
-      if (isDuplicate) {
+      const res = await saveSeedRecord(savedRecord);
+      console.log('Save seed response:', res);
+      if (res && res.msg ==='SUCCESS') {
+        message.success('已成功保存到留种页面');
+      } else if (res && res.exists === true) {
         message.error('该种子已经在留种记录中');
-        hide();
-        return false;
+      } else {
+        message.error(res?.message || '保存失败，请重试！');
       }
-
-      records.push(savedRecord);
-      localStorage.setItem('savedSeeds', JSON.stringify(records));
-
-      hide();
-      message.success('已成功保存到留种页面');
-
-      Modal.confirm({
-        title: '导出留种记录',
-        content: '是否要导出留种记录为Excel文件？',
-        okText: '导出',
-        cancelText: '取消',
-        onOk: () => handleExportSavedSeeds([savedRecord]),
-      });
-
-      return true;
     } catch (error) {
-      hide();
-      message.error('保存失败，请重试！');
-      return false;
+      message.error('保存失败，请重试');
     }
   };
 
@@ -697,8 +577,6 @@ const TableList: React.FC = () => {
     const hide = message.loading('正在批量保存到留种页面');
     if (!selectedRows) return true;
     try {
-      const existingRecords = localStorage.getItem('savedSeeds');
-      const records = existingRecords ? JSON.parse(existingRecords) : [];
       const validRecords: SavedSeedRecord[] = [];
       const duplicates: string[] = [];
 
@@ -708,17 +586,53 @@ const TableList: React.FC = () => {
           continue;
         }
 
-        // 检查是否已经存在相同的记录
-        const isDuplicate = records.some((item: any) => item.seedNumber === record.seedNumber);
-        if (isDuplicate) {
-          duplicates.push(record.varietyName);
+        // 检查后端是否已经存在相同的记录
+        try {
+          const checkResult = await checkSeedExists({
+            seedNumber: record.seedNumber
+          });
+          
+          if (checkResult.exists) {
+            duplicates.push(record.varietyName);
+            continue;
+          }
+        } catch (error) {
+          console.error('Check seed exists error:', error);
           continue;
         }
 
-        validRecords.push({
-          ...record,
+        // 准备留种记录数据
+        const savedRecord = {
+          key: record.key,
+          photo: record.photo || '',
+          varietyName: record.varietyName || '',
+          type: record.type || '',
+          introductionYear: record.introductionYear || '',
+          source: record.source || '',
+          breedingType: record.breedingType || 'regular',
+          seedNumber: record.seedNumber || '',
+          plantingYear: record.plantingYear || '',
+          resistance: record.resistance || '',
+          fruitCharacteristics: record.fruitCharacteristics || '',
+          floweringPeriod: record.floweringPeriod || '',
+          fruitCount: record.fruitCount || 0,
+          yield: record.yield || 0,
+          fruitShape: record.fruitShape || '',
+          skinColor: record.skinColor || '',
+          fleshColor: record.fleshColor || '',
+          singleFruitWeight: record.singleFruitWeight || 0,
+          fleshThickness: record.fleshThickness || 0,
+          sugarContent: record.sugarContent || 0,
+          texture: record.texture || '',
+          overallTaste: record.overallTaste || '',
+          combiningAbility: record.combiningAbility || '',
+          hybridization: record.hybridization || '',
           saveTime: new Date().toISOString(),
-        });
+        };
+
+        // 发送到后端保存
+        await saveSeedRecord(savedRecord);
+        validRecords.push(savedRecord);
       }
 
       if (duplicates.length > 0) {
@@ -726,6 +640,9 @@ const TableList: React.FC = () => {
       }
 
       if (validRecords.length > 0) {
+        // 更新本地存储
+        const existingRecords = localStorage.getItem('savedSeeds');
+        const records = existingRecords ? JSON.parse(existingRecords) : [];
         records.push(...validRecords);
         localStorage.setItem('savedSeeds', JSON.stringify(records));
 
@@ -745,6 +662,7 @@ const TableList: React.FC = () => {
     } catch (error) {
       hide();
       message.error('批量保存失败，请重试');
+      console.error('Batch save error:', error);
       return false;
     }
   };
@@ -792,32 +710,29 @@ const TableList: React.FC = () => {
     }
   };
 
-  const handleExportHybridization = () => {
+  const handleExportHybridization = async () => {
     if (hybridizationList.length === 0) {
-      message.warning('暂无杂交配组数据');
+      message.warning('配组表为空');
       return;
     }
-
-    // 创建CSV内容
-    const headers = ['编号', '母本编号', '父本编号', '母本名称', '父本名称'];
-    const csvContent = [
-      headers.join(','),
-      ...hybridizationList.map(item =>
-        [item.id, item.femaleNumber, item.maleNumber, item.femaleName, item.maleName].join(',')
-      )
-    ].join('\n');
-
-    // 创建Blob对象
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute('href', url);
-    link.setAttribute('download', '杂交配组表.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const res = await fetch('/api/seed/Hybridization', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(hybridizationList),
+      });
+      const result = await res.json();
+      if (result && (result.msg || result.code === 200)) {
+        message.success('配组表已导出并保存到数据库');
+        setHybridizationList([]);
+        setHybridModalOpen(false);
+        localStorage.removeItem('hybridizationList');
+      } else {
+        message.error(result?.msg || '导出失败');
+      }
+    } catch (e) {
+      message.error('导出失败，请重试');
+    }
   };
 
   const handleDeleteSowingRecord = (recordId: string) => {
@@ -907,87 +822,27 @@ const TableList: React.FC = () => {
     },
   ];
 
-  const handleImport = async () => {
-    if (fileList.length === 0) {
-      message.error('请选择要上传的Excel文件');
-      return;
-    }
-
-    const formData = new FormData();
-    fileList.forEach((file) => {
-      formData.append('file', file);
-    });
-
+  // 导入Excel后自动刷新表格
+  const handleImportExcel = async (formData: FormData) => {
     setUploading(true);
-
     try {
-      const response = await importExcel(formData);
-      console.log(response.message);
-      if (response) {
-        message.success({
-          content: '导入成功',
-          duration: 2,
-          onClose: () => {
-            // 提供查看文件的链接
-            const fileURL = URL.createObjectURL(fileList[0]);
-            window.open(fileURL, '_blank');
-          },
-        });
-        handleImportModalOpen(false);
-        setFileList([]);
-        // 刷新表格数据
-        if (actionRef.current) {
-          actionRef.current.reload();
-        }
-        // 确保每次导入的数据都被追加到mockData的末尾
-        if (response.data) {
-          const newRecords = response.data.map((item: API.RuleListItem) => ({
-            ...item,
-            breedingType: item.breedingType || 'regular',
-            photo1: item.photo1 || '',
-            photo2: item.photo2 || '',
-            varietyName: item.varietyName || '',
-            type: item.type || '',
-            introductionYear: item.introductionYear || '',
-            source: item.source || '',
-            seedNumber: item.seedNumber || '',
-            plantingYear: item.plantingYear || '',
-            resistance: item.resistance || '',
-            fruitCharacteristics: item.fruitCharacteristics || '',
-            floweringPeriod: item.floweringPeriod || '',
-            fruitCount: item.fruitCount || 0,
-            yield: item.yield || 0,
-            fruitShape: item.fruitShape || '',
-            skinColor: item.skinColor || '',
-            fleshColor: item.fleshColor || '',
-            singleFruitWeight: item.singleFruitWeight || 0,
-            fleshThickness: item.fleshThickness || 0,
-            sugarContent: item.sugarContent || 0,
-            texture: item.texture || '',
-            overallTaste: item.overallTaste || '',
-            combiningAbility: item.combiningAbility || '',
-            hybridization: item.hybridization || '',
-          }));
-          // 追加到mockData
-          mockData.push(...newRecords);
-        }
-      } else {
-        console.log(response);
-      }
-    } catch (error) {
-      console.error(error);
-      message.error('导入失败，请重试');
+      const response = await fetch('/api/seed/Seedimport', {
+        method: 'POST',
+        body: formData,
+      });
+      console.log(formData);
+      if (!response.ok) throw new Error('导入失败');
+      message.success('导入成功');
+      fetchTableData(); // 导入成功后刷新表格
+     } catch (error) {
+    //   message.error('导入失败，请重试');
+    } finally {
+      setUploading(false);
     }
-
-    setUploading(false);
   };
 
   const uploadProps = {
     onRemove: (file: any) => {
-      const index = fileList.indexOf(file);
-      const newFileList = fileList.slice();
-      newFileList.splice(index, 1);
-      setFileList(newFileList);
     },
     beforeUpload: (file: any) => {
       const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
@@ -1005,15 +860,11 @@ const TableList: React.FC = () => {
   const columns: ProColumns<API.RuleListItem>[] = [
     {
       title: '序号',
-      dataIndex: 'index',
-      valueType: 'index',
+      dataIndex: 'key',
+      valueType: 'text',
       width: 80,
       search: false,
-      render: (_, __, index, action) => {
-        const current = action?.pageInfo?.current || 1;
-        const pageSize = action?.pageInfo?.pageSize || 10;
-        return ((current - 1) * pageSize) + index + 1;
-      },
+      render: (text, record) => record.key,
       sorter: (a, b) => (a.key || 0) - (b.key || 0),
     },
     {
@@ -1038,6 +889,8 @@ const TableList: React.FC = () => {
       dataIndex: 'introductionYear',
       valueType: 'dateYear',
       sorter: (a, b) => (a.introductionYear || '').localeCompare(b.introductionYear || ''),
+      render: (text, record) => 
+        record.introductionYear, // 确保record更新
     },
     {
       title: '来源',
@@ -1078,7 +931,7 @@ const TableList: React.FC = () => {
       dataIndex: 'hybridization',
       valueType: 'text',
       render: (_, record) => {
-          return (
+        return (
           <Space>
             {record.hybridization && (
               <>
@@ -1148,7 +1001,34 @@ const TableList: React.FC = () => {
     }
   };
 
-  const [dataSource, setDataSource] = useState<API.RuleListItem[]>(generateMockData());
+  const [tableData, setTableData] = useState<API.RuleListItem[]>([]);
+  const [searchValues, setSearchValues] = useState<Partial<API.RuleListItem>>({});
+
+  // 页面加载时请求后端数据
+  useEffect(() => {
+    const fetchTableData = async () => {
+      try {
+        const response = await fetch('/api/seed/getSeed', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+        const result = await response.json();
+        console.log('Fetched table data:', result);
+        if (Array.isArray(result.data)) {
+          setTableData(result.data); // 只覆盖，不叠加
+        } else {
+          setTableData([]);
+        }
+      } catch (error) {
+        message.error('获取表格数据失败');
+        setTableData([]);
+      }
+    };
+    fetchTableData();
+  }, []);
 
   return (
     <PageContainer>
@@ -1162,7 +1042,7 @@ const TableList: React.FC = () => {
         search={{
           labelWidth: 120,
           defaultCollapsed: false,
-          collapseRender: (collapsed, showCollapseButton) => {
+          collapseRender: (collapsed: any, showCollapseButton: any) => {
             return showCollapseButton ? (
               <a
                 style={{ fontSize: '14px', color: '#2E7D32' }}
@@ -1172,15 +1052,16 @@ const TableList: React.FC = () => {
               </a>
             ) : null;
           },
-        }}
+          filterType: 'query',
+          onValuesChange: (changed: any, all: any) => setSearchValues(all),
+          onReset: () => setSearchValues({}),
+        } as any}
         toolBarRender={() => [
           <Button
             key="import"
             type="primary"
-            onClick={() => {
-              handleImportModalOpen(true);
-            }}
             icon={<ImportOutlined />}
+            onClick={() => handleImportModalOpen(true)}
           >
             导入Excel
           </Button>,
@@ -1194,7 +1075,19 @@ const TableList: React.FC = () => {
             <PlusOutlined /> 新增
           </Button>,
         ]}
-        request={rule}
+        dataSource={tableData.filter(row => {
+          if (searchValues.varietyName && !row.varietyName?.includes(searchValues.varietyName)) return false;
+          if (searchValues.type && row.type !== searchValues.type) return false;
+          if (searchValues.introductionYear && !String(row.introductionYear)?.includes(String(searchValues.introductionYear))) return false;
+          if (searchValues.source && !row.source?.includes(searchValues.source)) return false;
+          if (searchValues.breedingType && row.breedingType !== searchValues.breedingType) return false;
+          if (searchValues.seedNumber && !row.seedNumber?.includes(searchValues.seedNumber)) return false;
+          if (searchValues.fruitShape && !row.fruitShape?.includes(searchValues.fruitShape)) return false;
+          if (searchValues.skinColor && !row.skinColor?.includes(searchValues.skinColor)) return false;
+          if (searchValues.texture && !row.texture?.includes(searchValues.texture)) return false;
+          if (searchValues.hybridization && !row.hybridization?.includes(searchValues.hybridization)) return false;
+          return true;
+        })}
         columns={columns}
         rowSelection={{
           onChange: (_, selectedRows) => {
@@ -1260,12 +1153,26 @@ const TableList: React.FC = () => {
         open={createModalOpen}
         onOpenChange={handleModalOpen}
         onFinish={async (value) => {
-          const success = await handleAdd(value as API.RuleListItem);
-          if (success) {
-            handleModalOpen(false);
-            if (actionRef.current) {
-              actionRef.current.reload();
+          try {
+            const res = await fetch('/api/seed/addseed', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(value),
+            });
+            const result = await res.json();
+            console.log('Add seed response:', result);
+            if (result && (result.msg || result.code === 200)) {
+              message.success('添加成功');
+              handleModalOpen(false);
+              if (actionRef.current) actionRef.current.reload();
+              return true;
+            } else {
+              message.error(result?.msg || '添加失败');
+              return false;
             }
+          } catch (e) {
+            message.error('添加失败，请重试');
+            return false;
           }
         }}
       >
@@ -1294,7 +1201,7 @@ const TableList: React.FC = () => {
             { label: '西瓜', value: '西瓜' },
             { label: '甜瓜', value: '甜瓜' },
             { label: '南瓜', value: '南瓜' },
-            { label: '黄瓜', value: '黄瓜' },
+            { label: '菜瓜', value: '菜瓜' },
           ]}
         />
         <ProFormText
@@ -1493,33 +1400,42 @@ const TableList: React.FC = () => {
           <>
             <div style={{ marginBottom: 24 }}>
               <h4 style={{ marginBottom: 16 }}>照片</h4>
-              <div style={{ 
-                width: '100%', 
-                display: 'flex', 
+              <div style={{
+                width: '100%',
+                display: 'flex',
                 justifyContent: 'center',
                 border: '1px solid #f0f0f0',
                 borderRadius: '4px',
                 padding: '16px',
                 backgroundColor: '#fafafa'
               }}>
-                <img 
-                  src={currentRow.photo} 
-                  alt={currentRow.varietyName} 
-                  style={{ 
-                    maxWidth: '100%',
+                <img
+                  src={currentRow.photo1}
+                  alt={currentRow.varietyName}
+                  style={{
+                    maxWidth: '50%',
+                    maxHeight: '400px',
+                    objectFit: 'contain'
+                  }}
+                />
+                <img
+                  src={currentRow.photo2}
+                  alt={currentRow.varietyName}
+                  style={{
+                    maxWidth: '50%',
                     maxHeight: '400px',
                     objectFit: 'contain'
                   }}
                 />
               </div>
             </div>
-          <ProDescriptions<API.RuleListItem>
-            column={2}
+            <ProDescriptions<API.RuleListItem>
+              column={2}
               title={currentRow?.varietyName}
-            request={async () => ({
-              data: currentRow || {},
-            })}
-            params={{
+              request={async () => ({
+                data: currentRow || {},
+              })}
+              params={{
                 id: currentRow?.varietyName,
               }}
               columns={[
@@ -1629,7 +1545,10 @@ const TableList: React.FC = () => {
           <span style={{ fontSize: '18px', fontWeight: 500 }}>导入Excel</span>
         </div>}
         open={importModalOpen}
-        onOk={handleImport}
+        onOk={() => {
+          handleImportModalOpen(false);
+          setFileList([]);
+        }}
         onCancel={() => {
           handleImportModalOpen(false);
           setFileList([]);
@@ -1639,8 +1558,19 @@ const TableList: React.FC = () => {
         bodyStyle={{ padding: '24px' }}
       >
         <div style={{ background: '#fafafa', padding: '24px', borderRadius: '8px', marginBottom: '24px' }}>
-          <Upload {...uploadProps}>
-            <Button icon={<UploadOutlined />} size="large">选择Excel文件</Button>
+          <Upload
+            accept=".xlsx,.xls"
+            showUploadList={false}
+            beforeUpload={file => {
+              const formData = new FormData();
+              formData.append('file', file);
+              handleImportExcel(formData);
+              return false;
+            }}
+          >
+            <Button icon={<ImportOutlined />} loading={uploading} disabled={uploading}>
+              {uploading ? '上传中...' : '导入Excel'}
+            </Button>
           </Upload>
         </div>
 
@@ -1712,10 +1642,15 @@ const TableList: React.FC = () => {
                   ),
                 },
               ]}
-              dataSource={mockData.filter(item =>
-                item.key !== currentVariety?.key &&
-                item.type === currentVariety?.type
-              )}
+              dataSource={tableData.filter(item => {
+                if (item.key === currentVariety?.key) return false;
+                if (item.type !== currentVariety?.type) return false;
+                // 已经在杂交配组表中作为母本或父本出现过的品种不再显示
+                const used = hybridizationList.some(hy =>
+                  hy.femaleNumber === item.seedNumber || hy.maleNumber === item.seedNumber
+                );
+                return !used;
+              })}
               rowKey="key"
               pagination={{ pageSize: 5 }}
               style={{ marginBottom: '24px' }}
@@ -1753,7 +1688,19 @@ const TableList: React.FC = () => {
                 {
                   title: '配组日期',
                   dataIndex: 'date',
-                }
+                },
+                {
+                  title: '操作',
+                  dataIndex: 'operation',
+                  render: (_, record) => (
+                    <Button danger size="small" onClick={() => {
+                      const newList = hybridizationList.filter(item => item.id !== record.id);
+                      setHybridizationList(newList);
+                      localStorage.setItem('hybridizationList', JSON.stringify(newList));
+                      message.success('已删除该配组');
+                    }}>删除</Button>
+                  ),
+                },
               ]}
               dataSource={hybridizationList}
               rowKey="id"
@@ -1824,8 +1771,8 @@ const TableList: React.FC = () => {
               </Form.Item>
             </div>
             <Form.Item style={{ marginTop: '24px', textAlign: 'right' }}>
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 htmlType="submit"
                 onClick={() => {
                   form.validateFields()

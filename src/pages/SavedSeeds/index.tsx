@@ -9,11 +9,24 @@ const SavedSeeds: React.FC = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   useEffect(() => {
-    // 从localStorage加载留种记录
-    const records = localStorage.getItem('savedSeeds');
-    if (records) {
-      setSavedSeedList(JSON.parse(records));
-    }
+    // 页面加载时从后端获取留种记录
+    const fetchSavedSeeds = async () => {
+      try {
+        const response = await fetch('/api/seed/getReserve');
+        if (!response.ok) throw new Error('网络错误');
+        const result = await response.json();
+        console.log(result);
+        if (Array.isArray(result.data)) {
+          setSavedSeedList(result.data);
+        } else {
+          setSavedSeedList([]);
+        }
+       } catch (error) {
+         message.error('获取留种记录失败');
+         setSavedSeedList([]);
+       }
+    };
+    fetchSavedSeeds();
   }, []);
 
   const handleExport = () => {
@@ -87,17 +100,28 @@ const SavedSeeds: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  const handleDelete = (key: number) => {
+  const handleDelete = async (key: number) => {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这条记录吗？',
       okText: '确认',
       cancelText: '取消',
-      onOk: () => {
-        const newList = savedSeedList.filter(item => item.key !== key);
-        setSavedSeedList(newList);
-        localStorage.setItem('savedSeeds', JSON.stringify(newList));
-        message.success('记录已删除');
+      onOk: async () => {
+        try {
+          // 假设后端用key为唯一标识
+          const res = await fetch(`/api/seed/reservedelete?plantid=${key}`, { method: 'DELETE' });
+          const result = await res.json();
+          if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+            const newList = savedSeedList.filter(item => item.key !== key);
+            setSavedSeedList(newList);
+            localStorage.setItem('savedSeeds', JSON.stringify(newList));
+            message.success('记录已删除');
+          } else {
+            message.error(result?.msg || '删除失败');
+          }
+        } catch (e) {
+          message.error('删除失败，请重试');
+        }
       },
     });
   };
