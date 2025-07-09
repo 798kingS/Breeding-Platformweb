@@ -18,6 +18,7 @@ import { Button, Drawer, message, Upload, Modal, Table, Space, Input, InputNumbe
 import React, { useRef, useState, useEffect } from 'react';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
+import { request } from '@umijs/max';
 
 // 播种记录类型定义
 export interface SowingRecord {
@@ -94,6 +95,7 @@ const handleUpdate = async (fields: FormValueType) => {
 //   }
 // };
 
+const token = localStorage.getItem('token');
 const handleGenerateReport = async () => {
   const existingRecords = localStorage.getItem('sowingRecords');
   const allRecords = existingRecords ? JSON.parse(existingRecords) : [];
@@ -108,6 +110,7 @@ const handleGenerateReport = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(allRecords),
     });
@@ -213,6 +216,7 @@ const TableList: React.FC = () => {
     index: number;
     children: React.ReactNode;
   }
+  const token = localStorage.getItem('token');
 
   // 更新可编辑单元格组件
   const EditableCell: React.FC<EditableCellProps> = ({
@@ -465,7 +469,9 @@ const TableList: React.FC = () => {
     try {
       const response = await fetch('/api/seed/BatchReserve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(selectedRows),
       });
       const result = await response.json();
@@ -488,13 +494,16 @@ const TableList: React.FC = () => {
    * @param selectedRows 选中的行数据
    */
   // 批量播种与后端对接
+  // const token = localStorage.getItem('token');
   const handleBatchSowing = async (selectedRows: API.RuleListItem[]) => {
     const hide = message.loading('正在批量播种');
     if (!selectedRows || selectedRows.length === 0) return true;
     try {
       const response = await fetch('/api/seed/Batchseeding', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+         },
         body: JSON.stringify(selectedRows),
       });
       console.log('批量播种记录:', JSON.stringify(selectedRows));
@@ -522,6 +531,7 @@ const TableList: React.FC = () => {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       });
       const result = await response.json();
@@ -548,7 +558,9 @@ const TableList: React.FC = () => {
       // 调用后端批量删除接口
       await fetch('/api/seed/BatchDeleteSeed', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+         },
         body: JSON.stringify({ keys: selectedRows.map(row => row.key) }),
       });
       console.log('批量删除记录:', JSON.stringify([{ keys: selectedRows.map(row => row.key) }]));
@@ -571,7 +583,9 @@ const TableList: React.FC = () => {
     try {
       const res = await fetch('/api/seed/Hybridization', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+         },
         body: JSON.stringify(hybridizationList),
       });
       const result = await res.json();
@@ -683,6 +697,9 @@ const TableList: React.FC = () => {
       const response = await fetch('/api/seed/Seedimport', {
         method: 'POST',
         body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       console.log(formData);
       if (!response.ok) throw new Error('导入失败');
@@ -994,7 +1011,9 @@ const TableList: React.FC = () => {
           try {
             const res = await fetch('/api/seed/addseed', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json' ,
+                'Authorization': `Bearer ${token}`
+              },
               body: JSON.stringify(value),
             });
             const result = await res.json();

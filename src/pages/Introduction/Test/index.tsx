@@ -32,10 +32,16 @@ const TestList: React.FC = () => {
   const [editableKeys, setEditableKeys] = useState<string[]>([]);
   const [dataSource, setDataSource] = useState<TestRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-
+  const token = localStorage.getItem('token');
   const fetchTestRecords = async () => {
     try {
-      const response = await fetch('/api/introduction/getIntroducionExamination');
+      const response = await fetch('/api/introduction/getIntroducionExamination', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+      );
       if (!response.ok) throw new Error('网络错误');
       const result = await response.json();
       console.log('获取考种记录:', result);
@@ -92,6 +98,9 @@ const TestList: React.FC = () => {
         try {
           const res = await fetch(`/api/introduction/examinationdelete?plantid=${record.plantingCode}`, {
             method: 'DELETE',
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
           });
           const result = await res.json();
           console.log('删除考种记录:', result);
@@ -123,7 +132,9 @@ const TestList: React.FC = () => {
           const plantids = selectedRowKeys; // 直接用rowKey
           const res = await fetch('/api/introduction/BatchDeleteExamination', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
             body: JSON.stringify({ keys: plantids }),
           });
           console.log('批量删除考种记录:', JSON.stringify({ keys: plantids }));
@@ -273,14 +284,18 @@ const TestList: React.FC = () => {
             try {
               const response = await fetch('/api/introduction/examinationedit', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                 },
                 body: JSON.stringify(row),
               });
               console.log('编辑考种记录:', row);
               if (response.ok) {
                 message.success('保存成功');
                 // 保存成功后刷新表格
-                const fetchRes = await fetch('/api/introduction/getIntroducionExamination');
+                const fetchRes = await fetch('/api/introduction/getIntroducionExamination', {
+                  headers: { 'Authorization': `Bearer ${token}` },
+                });
                 const fetchJson = await fetchRes.json();
                 console.log('刷新考种记录:', fetchJson);
                 if (Array.isArray(fetchJson.data)) {

@@ -18,11 +18,15 @@ interface SowingRecord {
 const SowingRecords: React.FC = () => {
   const [sowingList, setSowingList] = useState<SowingRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-
+  const token = localStorage.getItem('token');
   // 加载数据的函数
   const loadSowingRecords = async () => {
     try {
-      const response = await fetch('/api/seed/getSeedSow');
+      const response = await fetch('/api/seed/getSeedSow',{
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) throw new Error('网络错误');
       const result = await response.json();
       console.log('获取播种记录:', result);
@@ -128,7 +132,9 @@ const SowingRecords: React.FC = () => {
         try {
           const res = await fetch('/api/seed/BatchDeleteSow', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
             body: JSON.stringify({ keys: selectedRowKeys }),
           });
           console.log('批量删除请求:', JSON.stringify({ plantids: selectedRowKeys }));

@@ -40,28 +40,58 @@ const IntroductionList: React.FC = () => {
     ];
   });
 
+  const token = localStorage.getItem('token');
 
-  // 页面加载时从后端获取引种记录
-  useEffect(() => {
-    const fetchIntroductionRecords = async () => {
-      try {
-        const response = await fetch('/api/introduction/getIntroduction');
-        if (!response.ok) throw new Error('网络错误');
-        const result = await response.json();
-        if (Array.isArray(result.data)) {
-          setDataSource(result.data);
-          setFilteredData(result.data); // 初始化filteredData
-          console.log('获取引种记录:', result.data);
-        } else {
-          setDataSource([]);
-          setFilteredData([]);
+  const fetchIntroductionRecords = async () => {
+    try {
+      const response = await fetch('/api/introduction/getIntroduction', {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      } catch (error) {
-        message.error('获取引种记录失败');
+      }
+      );
+      if (!response.ok) throw new Error('网络错误');
+      const result = await response.json();
+      if (Array.isArray(result.data)) {
+        setDataSource(result.data);
+        setFilteredData(result.data); // 初始化filteredData
+        console.log('获取引种记录:', result.data);
+      } else {
         setDataSource([]);
         setFilteredData([]);
       }
-    };
+    } catch (error) {
+      message.error('获取引种记录失败');
+      setDataSource([]);
+      setFilteredData([]);
+    }
+  };
+  // 页面加载时从后端获取引种记录
+  useEffect(() => {
+    // const fetchIntroductionRecords = async () => {
+    //   try {
+    //     const response = await fetch('/api/introduction/getIntroduction', {
+    //       headers: {
+    //         'Authorization': `Bearer ${token}`
+    //       }
+    //     }
+    //     );
+    //     if (!response.ok) throw new Error('网络错误');
+    //     const result = await response.json();
+    //     if (Array.isArray(result.data)) {
+    //       setDataSource(result.data);
+    //       setFilteredData(result.data); // 初始化filteredData
+    //       console.log('获取引种记录:', result.data);
+    //     } else {
+    //       setDataSource([]);
+    //       setFilteredData([]);
+    //     }
+    //   } catch (error) {
+    //     message.error('获取引种记录失败');
+    //     setDataSource([]);
+    //     setFilteredData([]);
+    //   }
+    // };
     fetchIntroductionRecords();
   }, []);
 
@@ -108,7 +138,9 @@ const IntroductionList: React.FC = () => {
       try {
         const response = await fetch('/api/introduction/sow', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+           },
           body: JSON.stringify(sowingTableData),
         });
         if (response.ok) {
@@ -133,6 +165,7 @@ const IntroductionList: React.FC = () => {
     try {
       const response = await fetch('/api/introduction/ExcelImport', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
       });
       const result = await response.json();
@@ -140,6 +173,7 @@ const IntroductionList: React.FC = () => {
         message.success('导入成功');
         // 导入成功后刷新数据
         const fetchRes = await fetch('/api/introduction/getIntroduction');
+        // await fetchIntroductionRecords()
         const fetchJson = await fetchRes.json();
         if (Array.isArray(fetchJson.data)) {
           setDataSource(fetchJson.data);
@@ -176,7 +210,9 @@ const IntroductionList: React.FC = () => {
     try {
       const response = await fetch('/api/introduction/purification', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+         },
         body: JSON.stringify(record),
       });
       // console.log('转入自交系纯化请求:', record);
@@ -207,7 +243,9 @@ const IntroductionList: React.FC = () => {
           try {
             const res = await fetch('/api/introduction/BatchDeleteIntroduction', {
               method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+               },
               body: JSON.stringify({ keys: selectedRowKeys }),
             });
             console.log('批量删除请求:', JSON.stringify({ keys: selectedRowKeys }));
@@ -344,6 +382,7 @@ const IntroductionList: React.FC = () => {
                 try {
                   const res = await fetch(`/api/introduction/introductionDelete?plantid=${record.plantingCode}`, {
                     method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json',  'Authorization': `Bearer ${localStorage.getItem('token')}` },
                   });
                   const result = await res.json();
                   if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
@@ -427,13 +466,18 @@ const IntroductionList: React.FC = () => {
             try {
               const response = await fetch('/api/introduction/edit', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                 },
                 body: JSON.stringify(row),
               });
               if (response.ok) {
                 message.success('保存成功');
                 // 保存成功后刷新数据
-                const fetchRes = await fetch('/api/introduction/getIntroduction');
+                const fetchRes = await fetch('/api/introduction/getIntroduction', {
+                  headers: { 'Content-Type': 'application/json',  'Authorization': `Bearer ${token}` },
+                }
+                );
                 const fetchJson = await fetchRes.json();
                 if (Array.isArray(fetchJson.data)) {
                   setDataSource(fetchJson.data);
@@ -557,14 +601,20 @@ const IntroductionList: React.FC = () => {
           try {
             const response = await fetch('/api/introduction/introductionAdd', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+               },
               body: JSON.stringify(values),
             });
             if (response.ok) {
               message.success('新增成功');
               setCreateModalOpen(false);
               // 刷新表格
-              const fetchRes = await fetch('/api/introduction/getIntroduction');
+              const fetchRes = await fetch('/api/introduction/getIntroduction',{
+                headers: { 'Content-Type': 'application/json',  'Authorization': `Bearer ${token}`
+              }
+              }
+              );
               const fetchJson = await fetchRes.json();
               if (Array.isArray(fetchJson.data)) {
                 setDataSource(fetchJson.data);

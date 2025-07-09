@@ -9,10 +9,15 @@ const PurificationSavedSeeds: React.FC = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   // 页面加载时从后端获取自交系纯化留种记录
+  const token = localStorage.getItem('token');
   useEffect(() => {
     const fetchSavedRecords = async () => {
       try {
-        const response = await fetch('/api/Selfing/getReserve');
+        const response = await fetch('/api/Selfing/getReserve', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         if (!response.ok) throw new Error('网络错误');
         const result = await response.json();
         console.log('获取留种记录:', result);
@@ -93,6 +98,9 @@ const PurificationSavedSeeds: React.FC = () => {
         try {
           const res = await fetch(`/api/Selfing/reservedelete?plantid=${plantid}`, {
             method: 'DELETE',
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
           });
           const result = await res.json();
           if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
@@ -124,7 +132,9 @@ const PurificationSavedSeeds: React.FC = () => {
           const plantids = selectedRowKeys; // 直接用rowKey
           const response = await fetch('/api/Selfing/BatchDeleteReserve', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
             body: JSON.stringify({ keys: plantids }),
           });
           console.log('批量删除请求:', JSON.stringify({ keys: plantids }));

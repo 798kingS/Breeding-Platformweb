@@ -3,6 +3,7 @@
 import { request } from '@umijs/max';
 import { generateMockData } from './mockData';
 
+const token = localStorage.getItem('token');
 /** 获取当前的用户 GET /api/currentUser */
 export async function currentUser(options?: { [key: string]: any }) {
   return request<{
@@ -22,16 +23,16 @@ export async function outLogin(options?: { [key: string]: any }) {
 }
 
 /** 登录接口 POST /api/login/account */
-export async function login(body: API.LoginParams, options?: { [key: string]: any }) {
-  return request<API.LoginResult>('/api/login/account', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  });
-}
+// export async function login(body: API.LoginParams, options?: { [key: string]: any }) {
+//   return request<API.LoginResult>('/api/login/account', {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//     },
+//     data: body,
+//     ...(options || {}),
+//   });
+// }
 
 /** 此处后端没有提供注释 GET /api/notices */
 export async function getNotices(options?: { [key: string]: any }) {
@@ -108,6 +109,7 @@ export async function saveSeed(body: {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
     },
     data: body,
     ...(options || {}),
@@ -123,7 +125,8 @@ export async function importExcel(formData: FormData) {
     success: boolean; // 返回的成功状态
     message?: string; // 返回的消息
     headers: {
-      'Content-Type': 'multipart/form-data', // 手动设置请求头
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${token}`// 手动设置请求头
     },
   }>('/api/seed/Seedimport', {
     method: 'POST',
@@ -183,6 +186,7 @@ export async function saveSowingRecord(body: {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
     },
     data: body,
     ...(options || {}),
@@ -222,6 +226,7 @@ export async function saveSeedRecord(body: {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
     },
     data: body,
     ...(options || {}),
@@ -237,6 +242,9 @@ export async function checkSeedExists(params: {
     message?: string;
   }>('/api/seed/reserve', {
     method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
     params: {
       ...params,
     },
@@ -250,6 +258,9 @@ export async function deleteSowingRecord(params: {
 }, options?: { [key: string]: any }) {
   return request<Record<string, any>>('/api/seed/sowdelete', {
     method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
     params: {
       ...params,
     },
@@ -263,9 +274,69 @@ export async function batchDeleteSowingRecords(params: {
 }, options?: { [key: string]: any }) {
   return request<Record<string, any>>('/api/seed/BatchDeleteSow', {
     method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
     params: {
       ...params,
     },
     ...(options || {}),
   });
+}
+
+/** 用户注册 */
+export async function register(body: API.RegisterParams, options?: { [key: string]: any }) {
+  return request<API.RegisterResult>('/api/auth/register', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 用户登录 */
+export async function login(body: API.LoginParams, options?: { [key: string]: any }) {
+  return request<API.LoginResult>('/api/auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 图片识别 */
+export async function imageOcr(file: File) {
+  // const token = localStorage.getItem('token');
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    const response = await fetch('/api/ocr/image', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error(`OCR请求失败: ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type');
+
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    } else {
+      const text = await response.text();
+      return { text };
+    }
+  } catch (error) {
+    console.error('OCR识别失败:', error);
+    throw error;
+  }
 }

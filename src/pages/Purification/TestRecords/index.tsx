@@ -12,12 +12,19 @@ const TestRecords: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
 
+  const token = localStorage.getItem('token');
+
   // 页面加载时从后端获取自交系纯化考种记载表数据
   useEffect(() => {
     const fetchTestRecords = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/Selfing/getExamination');
+        const response = await fetch('/api/Selfing/getExamination', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+        );
         if (!response.ok) throw new Error('网络错误');
         const result = await response.json();
         console.log('获取考种记载表数据:', result);
@@ -46,7 +53,9 @@ const TestRecords: React.FC = () => {
     try {
       const response = await fetch('/api/Selfing/editexamination', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+         },
         body: JSON.stringify(row),
       });
       const result = await response.json();
@@ -74,7 +83,9 @@ const TestRecords: React.FC = () => {
         try {
           const response = await fetch(`/api/Selfing/editexaminationdelete?plantid=${record.plantingCode}`, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
             body: JSON.stringify({ id: record.id }),
           });
           const result = await response.json();
@@ -111,7 +122,9 @@ const TestRecords: React.FC = () => {
           }).filter(Boolean);
           const response = await fetch('/api/Selfing/BatchDeleteExamination', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
             body: JSON.stringify({ keys: plantingCodes }),
           });
           console.log('批量删除请求:', JSON.stringify({ keys: plantingCodes }));
@@ -149,7 +162,9 @@ const TestRecords: React.FC = () => {
       };
       const response = await fetch('/api/Selfing/reserve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+         },
         body: JSON.stringify(payload),
       });
       const result = await response.json();

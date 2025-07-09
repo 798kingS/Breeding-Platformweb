@@ -36,12 +36,18 @@ const PurificationList: React.FC = () => {
   const [sowingModalVisible, setSowingModalVisible] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<PurificationRecord | null>(null);
   const [form] = Form.useForm();
+  const token = localStorage.getItem('token');
 
   // 页面加载时从后端获取自交系纯化数据
   useEffect(() => {
     const fetchPurificationRecords = async () => {
       try {
-        const response = await fetch('/api/Selfing/getSelfingSeed');
+        const response = await fetch('/api/Selfing/getSelfingSeed', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+        );
         if (!response.ok) throw new Error('网络错误');
         const result = await response.json();
         console.log('获取自交系纯化数据:', result);
@@ -105,7 +111,9 @@ const PurificationList: React.FC = () => {
         try {
           const response = await fetch(`/api/Selfing/seeddelete?plantid=${record.pedigreeNumber}`, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
             // body: JSON.stringify({ plantid: record.pedigreeNumber }),
           });
           const result = await response.json();
@@ -142,7 +150,9 @@ const PurificationList: React.FC = () => {
           }).filter(Boolean);
           const response = await fetch('/api/Selfing/BatchDeleteSeed', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
             body: JSON.stringify({ keys: pedigreeNumbers }),
           });
           console.log('批量删除请求:', JSON.stringify({ keys: pedigreeNumbers }));
@@ -193,7 +203,9 @@ const PurificationList: React.FC = () => {
       // POST到后端保存
       const response = await fetch('/api/Selfing/sow', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+         },
         body: JSON.stringify(payload),
       });
       const result = await response.json();
@@ -217,6 +229,7 @@ const PurificationList: React.FC = () => {
       // 假设后端接口为 /api/purification/ExcelImport，返回格式为 { data: PurificationRecord[] }
       const response = await fetch('/api/Selfing/ExcelImport', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
       });
       const result = await response.json();
@@ -242,7 +255,9 @@ const PurificationList: React.FC = () => {
     try {
       const response = await fetch('/api/Selfing/editSelfing', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+         },
         body: JSON.stringify(row),
       });
       const result = await response.json();

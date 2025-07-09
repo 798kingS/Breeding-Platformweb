@@ -23,10 +23,20 @@ declare namespace API {
     phone?: string;
   };
 
+  // type LoginResult = {
+  //   status?: string;
+  //   type?: string;
+  //   currentAuthority?: string;
+  // };
+
   type LoginResult = {
-    status?: string;
+    token?: string;
+    id?: number;
+    username?: string;
+    role?: string;
+    status?: 'ok' | 'error';
     type?: string;
-    currentAuthority?: string;
+    message?: string;
   };
 
   type PageParams = {
@@ -83,6 +93,22 @@ declare namespace API {
     type?: string;
   };
 
+  type ImageContent = {
+    image?: string;
+    text?: string;
+    content?: string;
+  }
+
+  type LoginState = {
+    status?: 'ok' | 'error';
+    type?: string;
+    message?: string;
+    token?: string;
+    id?: number;
+    username?: string;
+    role?: string;
+  };
+
   type ErrorResponse = {
     /** 业务约定的错误码 */
     errorCode: string;
@@ -90,6 +116,16 @@ declare namespace API {
     errorMessage?: string;
     /** 业务上的请求是否成功 */
     success?: boolean;
+  };
+
+  type RegisterParams = {
+    username: string;
+    password: string;
+  };
+
+  type RegisterResult = {
+    success: boolean;
+    message: string;
   };
 
   type NoticeIconList = {

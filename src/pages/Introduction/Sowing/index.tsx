@@ -35,10 +35,15 @@ const SowingList: React.FC = () => {
   const [filteredData, setFilteredData] = useState<SowingRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  
+  const token = localStorage.getItem('token');
   const fetchSowingRecords = async () => {
     try {
-      const response = await fetch('/api/introduction/getIntroductionSow');
+      const response = await fetch('/api/introduction/getIntroductionSow', {
+        headers: {  
+          Authorization: `Bearer ${token}`,
+        },
+      }
+        );
       if (!response.ok) throw new Error('网络错误');
       const result = await response.json();
       console.log('获取播种记录:', result);
@@ -106,6 +111,7 @@ const SowingList: React.FC = () => {
         try {
           const res = await fetch(`/api/introduction/introductionSowDelete?plantid=${record.plantingCode}`, {
             method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           });
           const result = await res.json();
           if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
@@ -137,19 +143,25 @@ const SowingList: React.FC = () => {
       okText: '确认',
       cancelText: '取消',
       onOk: async () => {
-        // const plantids = JSON.stringify({ plantids: selectedRowKeys })
         try {
+          const plantids = selectedRowKeys.map(key => {
+            const row = dataSource.find(item => item.key === key);
+            return row?.plantingCode;
+          }).filter(Boolean);
           const res = await fetch('/api/introduction/BatchDeleteSow', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keys: selectedRowKeys }),
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ keys: plantids }),
           });
-          console.log('批量删除请求:', JSON.stringify({ keys: selectedRowKeys }));
+          console.log('批量删除请求:', JSON.stringify({ keys: plantids }));
           const result = await res.json();
           if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
-            setDataSource(dataSource.filter(item => !selectedRowKeys.includes(item.plantingCode)));
+            setDataSource(dataSource.filter(item => !plantids.includes(item.plantingCode)));
             setSelectedRowKeys([]);
-            message.success(`已删除 ${selectedRowKeys.length} 条记录`);
+            await fetchSowingRecords();
+            message.success(`已删除 ${plantids.length} 条记录`);
           } else {
             message.error(result?.msg || '批量删除失败');
           }
@@ -160,18 +172,55 @@ const SowingList: React.FC = () => {
     });
   };
 
+  // 处理批量播种
+  const handleBatchSowing = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请选择要批量播种的记录');
+      return;
+    }
+    Modal.confirm({
+      title: '确认批量播种',
+      content: `确定要批量播种选中的 ${selectedRowKeys.length} 条记录吗？`,
+      okText: '确认',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const plantingCodes = selectedRowKeys; // rowKey为plantingCode
+          const res = await fetch('/api/introduction/BatchSowing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ plantingCodes }),
+          });
+          console.log('批量播种请求:', JSON.stringify({ plantingCodes }));
+          const result = await res.json();
+          if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+            message.success(`已批量播种 ${plantingCodes.length} 条记录`);
+            setSelectedRowKeys([]);
+            fetchSowingRecords();
+          } else {
+            message.error(result?.msg || '批量播种失败');
+          }
+        } catch (e) {
+          message.error('批量播种失败，请重试');
+        }
+      },
+    });
+  };
+
   // 新增：考种按钮处理函数
   const handleTest = async (record: SowingRecord) => {
     try {
       const response = await fetch('/api/introduction/examination', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+         },
         body: JSON.stringify(record),
       });
       const result = await response.json();
       if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
         // 只更新当前行的status，直接用后端返回的status值
-        const newStatus = result.status || (result.data ? '已完成考种' : '未考种');
+        const newStatus = result.status || (result.data ? '已完成考种' : '已考种');
         const newDataSource = dataSource.map(item =>
           item.key === record.key ? { ...item, status: newStatus } : item
         );
@@ -236,7 +285,7 @@ const SowingList: React.FC = () => {
         if (record.status === '已完成考种' || record.status === '已生成考种记录' || record.status === '已生成考种') {
           return <span style={{ color: 'green' }}>种子已考种</span>;
         }
-        return <span style={{ color: 'red' }}>未考种</span>;
+        return <span style={{ color: 'red' }}>已考种</span>;
       },
     },
     {
@@ -284,6 +333,14 @@ const SowingList: React.FC = () => {
             disabled={selectedRowKeys.length === 0}
           >
             批量删除
+          </Button>,
+          <Button
+            key="batchSowing"
+            type="primary"
+            onClick={handleBatchSowing}
+            disabled={selectedRowKeys.length === 0}
+          >
+            批量播种
           </Button>,
         ]}
         rowSelection={{

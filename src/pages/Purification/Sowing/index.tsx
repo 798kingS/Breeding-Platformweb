@@ -42,11 +42,19 @@ const SowingList: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<any>(null);
   const [form] = Form.useForm();
 
+
+  const token = localStorage.getItem('token');
   // 页面加载时从后端获取自交系纯化播种计划数据
   useEffect(() => {
     const fetchPurificationSowingRecords = async () => {
       try {
-        const response = await fetch('/api/Selfing/getSelfingSow');
+        const response = await fetch('/api/Selfing/getSelfingSow', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+        );
         if (!response.ok) throw new Error('网络错误');
         const result = await response.json();
         console.log('获取自交系纯化播种计划数据:', result);
@@ -113,7 +121,9 @@ const SowingList: React.FC = () => {
         try {
           const response = await fetch(`/api/Selfing/sowDelete?plantid=${record.plantingcode}`, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
             // body: JSON.stringify({ plantingcode: record.plantingcode }),
           });
           const result = await response.json();
@@ -148,7 +158,9 @@ const SowingList: React.FC = () => {
           }).filter(Boolean);
           const response = await fetch('/api/Selfing/BatchDeleteSow', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+             },
             body: JSON.stringify({ keys: pedigreeNumbers }),
           });
           console.log('批量删除请求:', pedigreeNumbers);
@@ -200,6 +212,7 @@ const SowingList: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(examData),
       });
@@ -538,7 +551,9 @@ const SowingList: React.FC = () => {
     try {
       const response = await fetch('/api/Selfing/editSow', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+         },
         body: JSON.stringify(row),
       });
       const result = await response.json();
