@@ -140,12 +140,12 @@ const SavedSeeds: React.FC = () => {
       onOk: async () => {
         // const plantids = JSON.stringify({ plantids: selectedRowKeys })
         try {
-          const res = await fetch('/api/seed/BatchDeleteSeed', {
+          const res = await fetch('/api/seed/BatchDeleteReserve', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ keys: selectedRowKeys }),
           });
-          console.log('批量删除请求:', JSON.stringify({ plantids: selectedRowKeys }));
+          console.log('批量删除请求:', JSON.stringify({ keys: selectedRowKeys }));
           const result = await res.json();
           if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
             setSavedSeedList(savedSeedList.filter(item => !selectedRowKeys.includes(item.key)));

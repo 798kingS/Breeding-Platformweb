@@ -463,7 +463,7 @@ const TableList: React.FC = () => {
     if (!selectedRows || selectedRows.length === 0) return true;
     console.log('Selected rows for batch save:', selectedRows);
     try {
-      const response = await fetch('/api/seed/reserve', {
+      const response = await fetch('/api/seed/BatchReserve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(selectedRows),
@@ -492,11 +492,12 @@ const TableList: React.FC = () => {
     const hide = message.loading('正在批量播种');
     if (!selectedRows || selectedRows.length === 0) return true;
     try {
-      const response = await fetch('/api/seed/batchSowing', {
+      const response = await fetch('/api/seed/Batchseeding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(selectedRows),
       });
+      console.log('批量播种记录:', JSON.stringify(selectedRows));
       const result = await response.json();
       hide();
       if (result && (result.msg === 'SUCCESS' || result.code === 200)) {
@@ -972,7 +973,7 @@ const TableList: React.FC = () => {
           >
             批量留种
           </Button>
-          <Button
+          {/* <Button
             type="primary"
             onClick={async () => {
               await handleBatchSowing(selectedRowsState);
@@ -981,7 +982,7 @@ const TableList: React.FC = () => {
             }}
           >
             批量播种
-          </Button>
+          </Button> */}
         </FooterToolbar>
       )}
       <ModalForm

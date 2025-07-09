@@ -135,11 +135,17 @@ const PurificationList: React.FC = () => {
       content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
       onOk: async () => {
         try {
+          // 取出选中行的pedigreeNumber
+          const pedigreeNumbers = selectedRowKeys.map(key => {
+            const row = dataSource.find(item => item.key === key);
+            return row?.pedigreeNumber;
+          }).filter(Boolean);
           const response = await fetch('/api/Selfing/BatchDeleteSeed', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keys: selectedRowKeys }),
+            body: JSON.stringify({ keys: pedigreeNumbers }),
           });
+          console.log('批量删除请求:', JSON.stringify({ keys: pedigreeNumbers }));
           const result = await response.json();
           if (response.ok && result.success !== false) {
             message.success('批量删除成功');

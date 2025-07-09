@@ -121,15 +121,16 @@ const PurificationSavedSeeds: React.FC = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          const plantids = savedSeedList.filter(item => selectedRowKeys.includes(item.key)).map(item => item.plantingCode);
+          const plantids = selectedRowKeys; // 直接用rowKey
           const response = await fetch('/api/Selfing/BatchDeleteReserve', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ plantids }),
+            body: JSON.stringify({ keys: plantids }),
           });
+          console.log('批量删除请求:', JSON.stringify({ keys: plantids }));
           const result = await response.json();
           if (response.ok && result.success !== false) {
-            const newList = savedSeedList.filter(item => !selectedRowKeys.includes(item.key));
+            const newList = savedSeedList.filter(item => !plantids.includes(item.plantingCode));
             setSavedSeedList(newList);
             setSelectedRowKeys([]);
             message.success(`已删除 ${plantids.length} 条记录`);
@@ -250,7 +251,7 @@ const PurificationSavedSeeds: React.FC = () => {
         rowSelection={rowSelection}
         columns={columns}
         dataSource={filteredList}
-        rowKey="key"
+        rowKey="plantingCode"
         scroll={{ x: 2000 }}
         pagination={{
           defaultPageSize: 10,

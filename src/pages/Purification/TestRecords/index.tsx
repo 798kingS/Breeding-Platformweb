@@ -104,11 +104,17 @@ const TestRecords: React.FC = () => {
       content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
       onOk: async () => {
         try {
+          // 取出选中行的plantingCode
+          const plantingCodes = selectedRowKeys.map(key => {
+            const row = dataSource.find(item => item.id === key);
+            return row?.plantingCode;
+          }).filter(Boolean);
           const response = await fetch('/api/Selfing/BatchDeleteExamination', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: selectedRowKeys }),
+            body: JSON.stringify({ keys: plantingCodes }),
           });
+          console.log('批量删除请求:', JSON.stringify({ keys: plantingCodes }));
           const result = await response.json();
           if (response.ok && result.success !== false) {
             const newData = dataSource.filter(item => !selectedRowKeys.includes(item.id));
