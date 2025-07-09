@@ -29,27 +29,29 @@ type TestRecord = {
 
 const TestList: React.FC = () => {
   const actionRef = useRef<ActionType>();
-  const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
+  const [editableKeys, setEditableKeys] = useState<string[]>([]);
   const [dataSource, setDataSource] = useState<TestRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  // 页面加载时从后端获取考种记录
-  useEffect(() => {
-    const fetchTestRecords = async () => {
-      try {
-        const response = await fetch('/api/introduction-test-records');
-        if (!response.ok) throw new Error('网络错误');
-        const result = await response.json();
-        if (Array.isArray(result.data)) {
-          setDataSource(result.data);
-        } else {
-          setDataSource([]);
-        }
-      } catch (error) {
-        message.error('获取考种记录失败');
+  const fetchTestRecords = async () => {
+    try {
+      const response = await fetch('/api/introduction/getIntroducionExamination');
+      if (!response.ok) throw new Error('网络错误');
+      const result = await response.json();
+      console.log('获取考种记录:', result);
+      if (Array.isArray(result.data)) {
+        setDataSource(result.data);
+      } else {
         setDataSource([]);
       }
-    };
+    } catch (error) {
+      message.error('获取考种记录失败');
+      setDataSource([]);
+    }
+  };
+
+  // 页面加载时从后端获取考种记录
+  useEffect(() => {
     fetchTestRecords();
   }, []);
 
@@ -58,21 +60,57 @@ const TestList: React.FC = () => {
     localStorage.setItem('testRecords', JSON.stringify(dataSource));
   }, [dataSource]);
 
+  // 实时查询：监听ProTable表单变化，实时过滤
+  const [filteredData, setFilteredData] = useState<TestRecord[]>([]);
+  useEffect(() => { setFilteredData(dataSource); }, [dataSource]);
+  const handleValuesChange = (_: any, all: any) => {
+    let result = dataSource;
+    if (all.plantingCode) result = result.filter(item => (item.plantingCode ?? '').toString().includes(all.plantingCode));
+    if (all.code) result = result.filter(item => (item.code ?? '').toString().includes(all.code));
+    if (all.name) result = result.filter(item => (item.name ?? '').toString().includes(all.name));
+    if (all.method) result = result.filter(item => (item.method ?? '').toString().includes(all.method));
+    if (all.type) result = result.filter(item => (item.type ?? '').toString().includes(all.type));
+    if (all.isRegular) result = result.filter(item => (item.isRegular ?? '').toString().includes(all.isRegular));
+    if (all.generation) result = result.filter(item => (item.generation ?? '').toString().includes(all.generation));
+    if (all.introductionTime) result = result.filter(item => (item.introductionTime ?? '').toString().includes(all.introductionTime));
+    if (all.sowingAmount) result = result.filter(item => String(item.sowingAmount ?? '').includes(all.sowingAmount));
+    if (all.planCode) result = result.filter(item => (item.planCode ?? '').toString().includes(all.planCode));
+    if (all.sowingTime) result = result.filter(item => (item.sowingTime ?? '').toString().includes(all.sowingTime));
+    if (all.testTime) result = result.filter(item => (item.testTime ?? '').toString().includes(all.testTime));
+    if (all.germinationRate) result = result.filter(item => String(item.germinationRate ?? '').includes(all.germinationRate));
+    if (all.purityRate) result = result.filter(item => String(item.purityRate ?? '').includes(all.purityRate));
+    if (all.remarks) result = result.filter(item => (item.remarks ?? '').toString().includes(all.remarks));
+    setFilteredData(result);
+  };
+
   // 处理单个删除
-  const handleDelete = (record: TestRecord) => {
+  const handleDelete = async (record: TestRecord) => {
     Modal.confirm({
       title: '确认删除',
       content: `确定要删除种植编号为 ${record.plantingCode} 的记录吗？`,
-      onOk: () => {
-        const newDataSource = dataSource.filter(item => item.key !== record.key);
-        setDataSource(newDataSource);
-        message.success('删除成功');
+      onOk: async () => {
+        try {
+          const res = await fetch(`/api/introduction/examinationdelete?plantid=${record.plantingCode}`, {
+            method: 'DELETE',
+          });
+          const result = await res.json();
+          console.log('删除考种记录:', result);
+          if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+            setDataSource(dataSource.filter(item => item.plantingCode !== record.plantingCode));
+            message.success('删除成功');
+            fetchTestRecords();
+          } else {
+            message.error(result?.msg || '删除失败');
+          }
+        } catch (e) {
+          message.error('删除失败，请重试');
+        }
       },
     });
   };
 
   // 处理批量删除
-  const handleBatchDelete = () => {
+  const handleBatchDelete = async () => {
     if (selectedRowKeys.length === 0) {
       message.warning('请选择要删除的记录');
       return;
@@ -80,13 +118,26 @@ const TestList: React.FC = () => {
     Modal.confirm({
       title: '确认删除',
       content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
-      onOk: () => {
-        const newDataSource = dataSource.filter(
-          item => !selectedRowKeys.includes(item.key)
-        );
-        setDataSource(newDataSource);
-        setSelectedRowKeys([]);
-        message.success('批量删除成功');
+      onOk: async () => {
+        try {
+          const plantids = selectedRowKeys; // 直接用rowKey
+          const res = await fetch('/api/introduction/BatchDeleteExamination', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keys: plantids }),
+          });
+          console.log('批量删除考种记录:', JSON.stringify({ keys: plantids }));
+          const result = await res.json();
+          if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+            setDataSource(dataSource.filter(item => !plantids.includes(item.plantingCode)));
+            setSelectedRowKeys([]);
+            message.success('批量删除成功');
+          } else {
+            message.error(result?.msg || '批量删除失败');
+          }
+        } catch (e) {
+          message.error('批量删除失败，请重试');
+        }
       },
     });
   };
@@ -168,7 +219,7 @@ const TestList: React.FC = () => {
           key="edit"
           type="link"
           onClick={() => {
-            setEditableKeys([record.key]);
+            setEditableKeys([record.plantingCode]);
           }}
         >
           编辑
@@ -190,9 +241,12 @@ const TestList: React.FC = () => {
       <ProTable<TestRecord>
         headerTitle="考种记录"
         actionRef={actionRef}
-        rowKey="key"
+        rowKey="plantingCode"
         search={{
           labelWidth: 120,
+        }}
+        form={{
+          onValuesChange: handleValuesChange,
         }}
         toolBarRender={() => [
           <Button
@@ -209,19 +263,35 @@ const TestList: React.FC = () => {
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys),
         }}
-        dataSource={dataSource}
+        dataSource={filteredData}
         editable={{
-          type: 'multiple',
+          type: 'single',
           editableKeys,
-          onChange: setEditableKeys,
-          actionRender: (row, config, defaultDom) => {
-            return [defaultDom.save, defaultDom.cancel];
-          },
-          onSave: async (key, row) => {
-            const newData = dataSource.map((item) =>
-              item.key === key ? { ...item, ...row } : item
-            );
-            setDataSource(newData);
+          onChange: (keys) => setEditableKeys(keys.map(String)),
+          onSave: async (_plantingCode, row) => {
+            // 编辑保存时，POST到后端
+            try {
+              const response = await fetch('/api/introduction/examinationedit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(row),
+              });
+              console.log('编辑考种记录:', row);
+              if (response.ok) {
+                message.success('保存成功');
+                // 保存成功后刷新表格
+                const fetchRes = await fetch('/api/introduction/getIntroducionExamination');
+                const fetchJson = await fetchRes.json();
+                console.log('刷新考种记录:', fetchJson);
+                if (Array.isArray(fetchJson.data)) {
+                  setDataSource(fetchJson.data);
+                }
+              } else {
+                message.error('保存失败');
+              }
+            } catch (e) {
+              message.error('保存失败');
+            }
           },
         }}
         columns={columns}

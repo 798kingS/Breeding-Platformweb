@@ -2,16 +2,16 @@
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { useRef, useState, useEffect } from 'react';
-import { useLocation, history } from '@umijs/max';
+import { useLocation } from '@umijs/max';
 import { Button, Modal, message, Upload, Form, Input, InputNumber, DatePicker } from 'antd';
 import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
-import * as XLSX from 'xlsx';
 import moment from 'moment';
 
 interface LocationState {
   purificationRecord?: PurificationRecord;
 }
 
+// PurificationRecord类型加索引签名
 type PurificationRecord = {
   key: number;
   // 引种记录字段
@@ -25,6 +25,7 @@ type PurificationRecord = {
   plantingCode: string;    // 种植编号
   sowingAmount: number;   // 播种数量
   sowingTime: string;    // 播种时间
+  [key: string]: any; // 允许任意字段索引
 };
 
 const PurificationList: React.FC = () => {
@@ -36,12 +37,30 @@ const PurificationList: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<PurificationRecord | null>(null);
   const [form] = Form.useForm();
 
-  // 从 localStorage 获取数据
+  // 页面加载时从后端获取自交系纯化数据
   useEffect(() => {
-    const savedData = localStorage.getItem('purificationRecords');
-    if (savedData) {
-      setDataSource(JSON.parse(savedData));
-    }
+    const fetchPurificationRecords = async () => {
+      try {
+        const response = await fetch('/api/Selfing/getSelfingSeed');
+        if (!response.ok) throw new Error('网络错误');
+        const result = await response.json();
+        console.log('获取自交系纯化数据:', result);
+        if (Array.isArray(result.data)) {
+          // 保证每条数据的key唯一，优先用id，否则用时间戳+随机数
+          const withKey = result.data.map((item: any) => ({
+            ...item,
+            key: item.id ?? item.key ?? (Date.now() + Math.random()),
+          }));
+          setDataSource(withKey);
+        } else {
+          setDataSource([]);
+        }
+      } catch (error) {
+        message.error('获取自交系纯化数据失败');
+        setDataSource([]);
+      }
+    };
+    fetchPurificationRecords();
   }, []);
 
   // 如果有新的自交系纯化记录，添加到数据源
@@ -53,20 +72,54 @@ const PurificationList: React.FC = () => {
     }
   }, [location.state]);
 
-  // 数据变化时保存到 localStorage
+  // 查询表单的值
+  const [searchValues, setSearchValues] = useState<any>({});
+  // 本地过滤后的数据
+  const [filteredData, setFilteredData] = useState<PurificationRecord[]>([]);
+
+  // 监听dataSource或searchValues变化，做本地过滤
   useEffect(() => {
-    localStorage.setItem('purificationRecords', JSON.stringify(dataSource));
-  }, [dataSource]);
+    let result = dataSource;
+    Object.entries(searchValues).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') return;
+      if (key === 'sowingTime') {
+        // 日期字段，支持范围或精确
+        if (typeof value === 'string') {
+          result = result.filter(item => (item.sowingTime || '').includes(value));
+        }
+      } else if (typeof value === 'string') {
+        result = result.filter(item => (item[key] || '').toString().includes(value));
+      } else {
+        result = result.filter(item => item[key] === value);
+      }
+    });
+    setFilteredData(result);
+  }, [dataSource, searchValues]);
 
   // 处理单个删除
   const handleDelete = (record: PurificationRecord) => {
     Modal.confirm({
       title: '确认删除',
-      content: `确定要删除种植编号为 ${record.plantingCode} 的记录吗？`,
-      onOk: () => {
-        const newDataSource = dataSource.filter(item => item.key !== record.key);
-        setDataSource(newDataSource);
-        message.success('删除成功');
+      content: `确定要删除种植编号为 ${record.pedigreeNumber} 的记录吗？`,
+      onOk: async () => {
+        try {
+          const response = await fetch(`/api/Selfing/seeddelete?plantid=${record.pedigreeNumber}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            // body: JSON.stringify({ plantid: record.pedigreeNumber }),
+          });
+          const result = await response.json();
+          if (response.ok && result.success !== false) {
+            message.success('删除成功');
+            // 从本地数据中移除
+            const newDataSource = dataSource.filter(item => item.key !== record.key);
+            setDataSource(newDataSource);
+          } else {
+            message.error(result.message || '删除失败');
+          }
+        } catch (error) {
+          message.error('删除失败，请重试');
+        }
       },
     });
   };
@@ -80,13 +133,28 @@ const PurificationList: React.FC = () => {
     Modal.confirm({
       title: '确认删除',
       content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
-      onOk: () => {
-        const newDataSource = dataSource.filter(
-          item => !selectedRowKeys.includes(item.key)
-        );
-        setDataSource(newDataSource);
-        setSelectedRowKeys([]);
-        message.success('批量删除成功');
+      onOk: async () => {
+        try {
+          const response = await fetch('/api/Selfing/BatchDeleteSeed', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keys: selectedRowKeys }),
+          });
+          const result = await response.json();
+          if (response.ok && result.success !== false) {
+            message.success('批量删除成功');
+            // 本地同步移除
+            const newDataSource = dataSource.filter(
+              item => !selectedRowKeys.includes(item.key)
+            );
+            setDataSource(newDataSource);
+            setSelectedRowKeys([]);
+          } else {
+            message.error(result.message || '批量删除失败');
+          }
+        } catch (error) {
+          message.error('批量删除失败，请重试');
+        }
       },
     });
   };
@@ -105,49 +173,31 @@ const PurificationList: React.FC = () => {
   const handleSowingConfirm = async () => {
     try {
       const values = await form.validateFields();
-      const sowingAmount = values.sowingAmount || 1;
-      
       if (!currentRecord) {
         message.error('未找到当前记录');
         return;
       }
-
-      // 从 localStorage 获取现有记录
-      const savedSowingRecords = localStorage.getItem('purificationSowingRecords') || '[]';
-      const existingSowingRecords = JSON.parse(savedSowingRecords);
-
-      // 检查是否已存在相同种植编号的记录
-      const hasExistingRecord = existingSowingRecords.some(
-        (record: any) => record.plantingCode === currentRecord.plantingCode
-      );
-
-      if (hasExistingRecord) {
-        message.warning('该记录已存在播种计划中');
+      // 整合所有字段，优先表单填写内容
+      const payload = {
+        ...currentRecord,
+        ...values,
+        sowingTime: values.sowingTime ? values.sowingTime.format('YYYY-MM-DD') : '',
+      };
+      console.log('播种数据:', payload);
+      // POST到后端保存
+      const response = await fetch('/api/Selfing/sow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (response.ok && result.success !== false) {
+        message.success('播种成功');
         setSowingModalVisible(false);
         form.resetFields();
-        return;
+      } else {
+        message.error(result.message || '播种失败');
       }
-
-      // 创建播种记录
-      const baseTime = Date.now();
-      const sowingRecords = Array(sowingAmount).fill(null).map((_, i) => ({
-        ...currentRecord,
-        key: baseTime + i,
-        sowingAmount: 1,
-        planCode: `P${baseTime + i}`,
-        status: '未完成',
-        sowingTime: values.sowingTime.format('YYYY-MM-DD'),
-      }));
-
-      // 保存到 localStorage
-      const updatedSowingRecords = [...existingSowingRecords, ...sowingRecords];
-      localStorage.setItem('purificationSowingRecords', JSON.stringify(updatedSowingRecords));
-
-      // 跳转到播种计划页面
-      history.push('/purification/sowing', { sowingRecords });
-      message.success(`已成功生成${sowingAmount}条播种记录！`);
-      setSowingModalVisible(false);
-      form.resetFields();
     } catch (error) {
       message.error('表单验证失败');
     }
@@ -165,10 +215,10 @@ const PurificationList: React.FC = () => {
       });
       const result = await response.json();
       if (result && Array.isArray(result.data)) {
-        // 自动生成key，拼接到现有数据
-        const newData = result.data.map((item: any, idx: number) => ({
+        // 保证每条数据的key唯一，优先用id，否则用时间戳+随机数
+        const newData = result.data.map((item: any) => ({
           ...item,
-          key: dataSource.length + idx + 1,
+          key: item.id ?? item.key ?? (Date.now() + Math.random()),
         }));
         setDataSource(prev => [...prev, ...newData]);
         message.success('导入成功');
@@ -181,48 +231,97 @@ const PurificationList: React.FC = () => {
     return false;
   };
 
+  // 行内编辑保存
+  const handleSave = async (row: PurificationRecord) => {
+    try {
+      const response = await fetch('/api/Selfing/editSelfing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(row),
+      });
+      const result = await response.json();
+      if (response.ok && result.success !== false) {
+        const newData = dataSource.map((item) => (item.key === row.key ? { ...item, ...row } : item));
+        setDataSource(newData);
+        message.success('保存成功');
+        return true;
+      } else {
+        message.error(result.message || '保存失败');
+        return false;
+      }
+    } catch (error) {
+      message.error('保存失败，请重试');
+      return false;
+    }
+  };
+
   const columns: ProColumns<PurificationRecord>[] = [
     {
       title: '系谱编号',
-      dataIndex: 'plantingCode',
+      dataIndex: 'pedigreeNumber',
+      // 支持查询
+      hideInTable: false,
+      hideInSearch: false,
     },
     {
       title: '编号',
       dataIndex: 'code',
+      hideInTable: false,
+      hideInSearch: false,
     },
     {
       title: '品种名称',
       dataIndex: 'name',
+      hideInTable: false,
+      hideInSearch: false,
     },
     {
       title: '引种方式',
       dataIndex: 'method',
+      hideInTable: false,
+      hideInSearch: false,
     },
     {
       title: '品种类型',
       dataIndex: 'type',
+      hideInTable: false,
+      hideInSearch: false,
     },
     {
       title: '是否常规',
       dataIndex: 'isRegular',
+      hideInTable: false,
+      hideInSearch: false,
     },
     {
       title: '世代',
       dataIndex: 'generation',
+      hideInTable: false,
+      hideInSearch: false,
     },
-    {
-      title: '播种数量',
-      dataIndex: 'sowingAmount',
-    },
+    // {
+    //   title: '播种数量',
+    //   dataIndex: 'sowingAmount',
+    //   hideInTable: false,
+    //   hideInSearch: false,
+    // },
     {
       title: '引种时间',
       dataIndex: 'sowingTime',
       valueType: 'date',
+      hideInTable: false,
+      hideInSearch: false,
     },
     {
       title: '操作',
       valueType: 'option',
-      render: (_, record) => [
+      render: (_, record, __, action) => [
+        <a
+          key="edit"
+          onClick={() => action?.startEditable?.(record.key)}
+        >
+          编辑
+        </a>,
         <Button
           key="sowing"
           type="link"
@@ -251,6 +350,9 @@ const PurificationList: React.FC = () => {
         search={{
           labelWidth: 120,
         }}
+        form={{
+          onValuesChange: (_: any, all: any) => setSearchValues(all),
+        }}
         toolBarRender={() => [
           <Upload
             key="import"
@@ -274,8 +376,12 @@ const PurificationList: React.FC = () => {
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys),
         }}
-        dataSource={dataSource}
+        dataSource={filteredData}
         columns={columns}
+        editable={{
+          type: 'single',
+          onSave: async (_, row) => handleSave(row),
+        }}
         pagination={{
           showQuickJumper: true,
           showSizeChanger: true,
@@ -314,8 +420,8 @@ const PurificationList: React.FC = () => {
           }}
         >
           <Form.Item
-            name="plantingCode"
-            label="种植编号"
+            name="code"
+            label="系谱编号"
           >
             <Input disabled />
           </Form.Item>

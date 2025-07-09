@@ -15,7 +15,7 @@ type IntroductionRecord = {
   type: string;  // 品种类型
   isRegular: string; // 是否常规
   generation: string;  // 世代
-  time: string;
+  introductionTime: string;
   plantingCode: string; // 种植编号
   // 引种时间
 };
@@ -27,6 +27,7 @@ const IntroductionList: React.FC = () => {
   const [form] = Form.useForm();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [filteredData, setFilteredData] = useState<IntroductionRecord[]>([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   // 从 localStorage 获取初始数据
   const [dataSource, setDataSource] = useState<IntroductionRecord[]>(() => {
@@ -81,7 +82,7 @@ const IntroductionList: React.FC = () => {
       type: record.type,
       isRegular: record.isRegular,
       generation: record.generation,
-      introductionTime: record.time,
+      introductionTime: record.introductionTime,
     });
   };
 
@@ -162,7 +163,7 @@ const IntroductionList: React.FC = () => {
         '品种类型': item.type,
         '是否常规': item.isRegular,
         '世代': item.generation,
-        '引种时间': item.time,
+        '引种时间': item.introductionTime,
       }))
     );
     const wb = XLSXUtils.book_new();
@@ -178,6 +179,7 @@ const IntroductionList: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(record),
       });
+      // console.log('转入自交系纯化请求:', record);
       if (response.ok) {
         message.success('转入自交系纯化成功');
       } else {
@@ -188,21 +190,62 @@ const IntroductionList: React.FC = () => {
     }
   };
 
+  // 批量删除
+    const handleBatchDelete = async () => {
+      if (selectedRowKeys.length === 0) {
+        message.warning('请选择要删除的记录');
+        return;
+      }
+  
+      Modal.confirm({
+        title: '确认批量删除',
+        content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
+        okText: '确认',
+        cancelText: '取消',
+        onOk: async () => {
+          // const plantids = JSON.stringify({ plantids: selectedRowKeys })
+          try {
+            const res = await fetch('/api/introduction/BatchDeleteIntroduction', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keys: selectedRowKeys }),
+            });
+            console.log('批量删除请求:', JSON.stringify({ keys: selectedRowKeys }));
+            const result = await res.json();
+            if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+              setDataSource(dataSource.filter(item => !selectedRowKeys.includes(item.plantingCode)));
+              setFilteredData(filteredData.filter(item => !selectedRowKeys.includes(item.plantingCode)));
+              setSelectedRowKeys([]);
+              message.success(`已删除 ${selectedRowKeys.length} 条记录`);
+            } else {
+              message.error(result?.msg || '批量删除失败');
+            }
+          } catch (e) {
+            message.error('批量删除失败，请重试');
+          }
+        },
+      });
+    };
+
   // dataSource变化时同步filteredData
   useEffect(() => {
     setFilteredData(dataSource);
   }, [dataSource]);
 
-  // 本地过滤函数
-  const handleSearch = (values: any) => {
+  // 实时查询：监听ProTable表单变化，实时过滤
+  const handleValuesChange = (_: any, all: any) => {
     let result = dataSource;
-    if (values.code) result = result.filter(item => (item.code ?? '').toString().includes(values.code));
-    if (values.name) result = result.filter(item => (item.name ?? '').toString().includes(values.name));
-    if (values.method) result = result.filter(item => item.method === values.method);
-    if (values.type) result = result.filter(item => item.type === values.type);
-    if (values.isRegular) result = result.filter(item => item.isRegular === values.isRegular);
-    if (values.generation) result = result.filter(item => (item.generation ?? '').toString().includes(values.generation));
-    if (values.time) result = result.filter(item => (item.time ?? '').toString().includes(values.time));
+    if (all.code) result = result.filter(item => (item.code ?? '').toString().includes(all.code));
+    if (all.name) result = result.filter(item => (item.name ?? '').toString().includes(all.name));
+    if (all.method) result = result.filter(item => item.method === all.method);
+    if (all.type) result = result.filter(item => item.type === all.type);
+    if (all.isRegular) result = result.filter(item => item.isRegular === all.isRegular);
+    if (all.generation) result = result.filter(item => (item.generation ?? '').toString().includes(all.generation));
+    if (all.introductionTime) {
+      // 日期字段支持模糊匹配
+      const val = typeof all.introductionTime === 'string' ? all.introductionTime : (all.introductionTime?.format?.('YYYY-MM-DD') ?? '');
+      result = result.filter(item => (item.introductionTime ?? '').includes(val));
+    }
     setFilteredData(result);
   };
 
@@ -210,7 +253,7 @@ const IntroductionList: React.FC = () => {
     {
       title: '编号',
       dataIndex: 'code',
-      editable: () => true,
+      editable: false, // 编号不可编辑
     },
     {
       title: '引种名称',
@@ -254,7 +297,7 @@ const IntroductionList: React.FC = () => {
     },
     {
       title: '引种时间',
-      dataIndex: 'time',
+      dataIndex: 'introductionTime',
       valueType: 'date',
       editable: () => true,
     },
@@ -282,7 +325,7 @@ const IntroductionList: React.FC = () => {
           key="edit"
           type="link"
           onClick={() => {
-            setEditableKeys([record.key]);
+            setEditableKeys([record.plantingCode]);
           }}
         >
           编辑
@@ -299,13 +342,12 @@ const IntroductionList: React.FC = () => {
               cancelText: '取消',
               onOk: async () => {
                 try {
-                  const res = await fetch(`/api/introduction/introductionDelete?plantid=${record.plantingCode
-                  }`, {
+                  const res = await fetch(`/api/introduction/introductionDelete?plantid=${record.plantingCode}`, {
                     method: 'DELETE',
                   });
                   const result = await res.json();
                   if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
-                    setDataSource(dataSource.filter(item => item.plantingCode !== record.plantingCode ));
+                    setDataSource(dataSource.filter(item => item.plantingCode !== record.plantingCode));
                     message.success('删除成功');
                   } else {
                     message.error(result?.msg || '删除失败');
@@ -328,9 +370,12 @@ const IntroductionList: React.FC = () => {
       <ProTable<IntroductionRecord>
         headerTitle="引种记录"
         actionRef={actionRef}
-        rowKey="key"
+        rowKey="plantingCode"
         search={{
           labelWidth: 120,
+        }}
+        form={{
+          onValuesChange: handleValuesChange,
         }}
         toolBarRender={() => [
           <Upload
@@ -355,64 +400,53 @@ const IntroductionList: React.FC = () => {
           >
             <PlusOutlined /> 新增
           </Button>,
+          <Button
+            key="batchDelete"
+            danger
+            onClick={handleBatchDelete}
+            disabled={selectedRowKeys.length === 0}
+          >
+            批量删除
+          </Button>,
         ]}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: setSelectedRowKeys,
+        }}
        
         dataSource={filteredData}
-        onSubmit={handleSearch}
+        // onSubmit={handleSearch} // 已用onValuesChange实时过滤，无需onSubmit
         onReset={() => setFilteredData(dataSource)}
         editable={{
-          type: 'multiple',
+          type: 'single',
           editableKeys,
           onChange: setEditableKeys,
           actionRender: (row, config, defaultDom) => [defaultDom.save, defaultDom.cancel],
-          onSave: async (key, row, originRow, newLine) => {
-            if (newLine) {
-              // 新增保存
-              try {
-                const response = await fetch('/api/introduction/add', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(row),
-                });
-                if (response.ok) {
-                  const newData = dataSource.map((item) =>
-                    item.key === key ? { ...item, ...row } : item
-                  );
-                  setDataSource(newData);
-                  message.success('新增成功');
-                } else {
-                  message.error('新增失败');
+          onSave: async (_code, row) => {
+            // 只处理编辑保存
+            try {
+              const response = await fetch('/api/introduction/edit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(row),
+              });
+              if (response.ok) {
+                message.success('保存成功');
+                // 保存成功后刷新数据
+                const fetchRes = await fetch('/api/introduction/getIntroduction');
+                const fetchJson = await fetchRes.json();
+                if (Array.isArray(fetchJson.data)) {
+                  setDataSource(fetchJson.data);
+                  setFilteredData(fetchJson.data);
                 }
-              } catch (e) {
-                message.error('新增失败');
-              }
-            } else {
-              // 编辑保存
-              try {
-                const response = await fetch('/api/introduction/update', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(row),
-                });
-                if (response.ok) {
-                  const newData = dataSource.map((item) =>
-                    item.key === key ? { ...item, ...row } : item
-                  );
-                  setDataSource(newData);
-                  message.success('保存成功');
-                } else {
-                  message.error('保存失败');
-                }
-              } catch (e) {
+              } else {
                 message.error('保存失败');
               }
+            } catch (e) {
+              message.error('保存失败');
             }
           },
-          onCancel: async (key, newLine) => {
-            if (newLine) {
-              setDataSource(dataSource.filter(item => item.key !== key));
-            }
-          },
+          onCancel: async () => {},
         }}
         columns={columns}
         pagination={{

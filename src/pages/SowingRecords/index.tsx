@@ -27,7 +27,12 @@ const SowingRecords: React.FC = () => {
       const result = await response.json();
       console.log('获取播种记录:', result);
       if (Array.isArray(result.data)) {
-        setSowingList(result.data);
+        // 保证每条数据的key唯一
+        const withKey = result.data.map((item: any, idx: number) => ({
+          ...item,
+          key: item.key || item.id || item.code || (item.seedNumber + '_' + idx),
+        }));
+        setSowingList(withKey);
       } else {
         setSowingList([]);
       }
@@ -107,27 +112,35 @@ const SowingRecords: React.FC = () => {
   };
 
   // 处理批量删除
-  const handleBatchDelete = () => {
+  const handleBatchDelete = async () => {
     if (selectedRowKeys.length === 0) {
       message.warning('请选择要删除的记录');
       return;
     }
 
     Modal.confirm({
-      title: '确认删除',
+      title: '确认批量删除',
       content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
+      okText: '确认',
+      cancelText: '取消',
       onOk: async () => {
+        // const plantids = JSON.stringify({ plantids: selectedRowKeys })
         try {
-          // 调用后端API批量删除记录
-          await batchDeleteSowingRecords({ ids: selectedRowKeys as string[] });
-          
-          // 删除成功后刷新数据
-          await loadSowingRecords();
-          
-          setSelectedRowKeys([]);
-          message.success('批量删除成功');
-        } catch (error) {
-          console.error('批量删除失败:', error);
+          const res = await fetch('/api/seed/BatchDeleteSow', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keys: selectedRowKeys }),
+          });
+          console.log('批量删除请求:', JSON.stringify({ plantids: selectedRowKeys }));
+          const result = await res.json();
+          if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+            setSowingList(sowingList.filter(item => !selectedRowKeys.includes(item.key)));
+            setSelectedRowKeys([]);
+            message.success(`已删除 ${selectedRowKeys.length} 条记录`);
+          } else {
+            message.error(result?.msg || '批量删除失败');
+          }
+        } catch (e) {
           message.error('批量删除失败，请重试');
         }
       },
@@ -141,8 +154,8 @@ const SowingRecords: React.FC = () => {
       valueType: 'text',
       width: 80,
       search: false,
-      render: (text, SowingRecord) => SowingRecord.code,
-      sorter: (a, b) => (a.key || 0) - (b.key || 0),
+      render: (text: any, SowingRecord: any) => SowingRecord.code,
+      sorter: (a: any, b: any) => (a.key || 0) - (b.key || 0),
     },
     // {
     //   title: '种植编号',

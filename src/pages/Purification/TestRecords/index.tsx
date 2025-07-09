@@ -12,35 +12,57 @@ const TestRecords: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
 
-  // 加载考种记载表数据
-  const loadExamRecords = () => {
-    setLoading(true);
-    try {
-      const records = localStorage.getItem('examRecords');
-      if (records) {
-        const parsedRecords = JSON.parse(records);
-        setDataSource(parsedRecords);
-      }
-    } catch (error) {
-      console.error('Error loading exam records:', error);
-      message.error('加载考种记载表数据失败');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 在组件挂载时加载数据
+  // 页面加载时从后端获取自交系纯化考种记载表数据
   useEffect(() => {
-    loadExamRecords();
+    const fetchTestRecords = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/Selfing/getExamination');
+        if (!response.ok) throw new Error('网络错误');
+        const result = await response.json();
+        console.log('获取考种记载表数据:', result);
+        if (Array.isArray(result.data)) {
+          // 保证每条数据有唯一id
+          const withId = result.data.map((item: any, idx: number) => ({
+            ...item,
+            id: item.id ?? item.ID ?? item.key ?? idx + '_' + Date.now(),
+          }));
+          setDataSource(withId);
+        } else {
+          setDataSource([]);
+        }
+      } catch (error) {
+        message.error('获取考种记载表数据失败');
+        setDataSource([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTestRecords();
   }, []);
 
   // 保存编辑后的数据
   const handleSave = async (row: any) => {
-    const newData = dataSource.map((item) => (item.id === row.id ? { ...item, ...row } : item));
-    setDataSource(newData);
-    localStorage.setItem('examRecords', JSON.stringify(newData));
-    message.success('保存成功');
-    return true;
+    try {
+      const response = await fetch('/api/Selfing/editexamination', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(row),
+      });
+      const result = await response.json();
+      if (response.ok && result.success !== false) {
+        const newData = dataSource.map((item) => (item.id === row.id ? { ...item, ...row } : item));
+        setDataSource(newData);
+        message.success('保存成功');
+        return true;
+      } else {
+        message.error(result.message || '保存失败');
+        return false;
+      }
+    } catch (error) {
+      message.error('保存失败，请重试');
+      return false;
+    }
   };
 
   // 删除当前行
@@ -48,41 +70,91 @@ const TestRecords: React.FC = () => {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这条记录吗？',
-      onOk: () => {
-        const newData = dataSource.filter(item => item.id !== record.id);
-        setDataSource(newData);
-        localStorage.setItem('examRecords', JSON.stringify(newData));
-        message.success('删除成功');
+      onOk: async () => {
+        try {
+          const response = await fetch(`/api/Selfing/editexaminationdelete?plantid=${record.plantingCode}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: record.id }),
+          });
+          const result = await response.json();
+          if (response.ok && result.success !== false) {
+            const newData = dataSource.filter(item => item.id !== record.id);
+            setDataSource(newData);
+            message.success('删除成功');
+          } else {
+            message.error(result.message || '删除失败');
+          }
+        } catch (error) {
+          message.error('删除失败，请重试');
+        }
+      },
+    });
+  };
+
+  // 批量删除功能
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const handleBatchDelete = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请选择要删除的记录');
+      return;
+    }
+    Modal.confirm({
+      title: '确认删除',
+      content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
+      onOk: async () => {
+        try {
+          const response = await fetch('/api/Selfing/BatchDeleteExamination', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: selectedRowKeys }),
+          });
+          const result = await response.json();
+          if (response.ok && result.success !== false) {
+            const newData = dataSource.filter(item => !selectedRowKeys.includes(item.id));
+            setDataSource(newData);
+            setSelectedRowKeys([]);
+            message.success('批量删除成功');
+          } else {
+            message.error(result.message || '批量删除失败');
+          }
+        } catch (error) {
+          message.error('批量删除失败，请重试');
+        }
       },
     });
   };
 
   // 留种功能
-  const handleSaveSeed = (record: any) => {
-    const existing = localStorage.getItem('savedSeeds');
-    const savedSeeds = existing ? JSON.parse(existing) : [];
-    // 判断是否已留种（以 code 唯一）
-    if (savedSeeds.some((item: any) => item.code === record.code)) {
-      message.info('已经留种');
-      return;
+  const handleSaveSeed = async (record: any) => {
+    try {
+      const payload = {
+        plantingCode: record.plantingCode,
+        code: record.code,
+        varietyName: record.varietyName,
+        method: record.method,
+        type: record.type,
+        isRegular: record.isRegular,
+        generation: record.generation,
+        amount: record.amount || 1,
+        saveTime: new Date().toISOString(),
+        source: record.source || '',
+        key: record.id || Date.now() + Math.random(),
+      };
+      const response = await fetch('/api/Selfing/reserve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (response.ok && result.success !== false) {
+        message.success('留种成功');
+      } else {
+        message.error(result.message || '留种失败');
+      }
+    } catch (error) {
+      message.error('留种失败，请重试');
     }
-    // 构造和 SavedRecords 页面一致的字段
-    const newSeed = {
-      plantingcode: record.plantingcode,
-      code: record.code,
-      name: record.varietyName,
-      method: record.method,
-      type: record.type,
-      isRegular: record.isRegular,
-      generation: record.generation,
-      amount: record.amount || 1,
-      saveTime: new Date().toISOString(),
-      source: record.source || '',
-      key: Date.now() + Math.random(),
-    };
-    savedSeeds.push(newSeed);
-    localStorage.setItem('savedSeeds', JSON.stringify(savedSeeds));
-    message.success('留种成功');
   };
 
   // 处理导出
@@ -136,7 +208,7 @@ const TestRecords: React.FC = () => {
   const columns: ProColumns<any>[] = [
     {
       title: '系谱编号',
-      dataIndex: 'plantingcode',
+      dataIndex: 'plantingCode',
       copyable: true,
       editable: () => true,
     },
@@ -177,12 +249,12 @@ const TestRecords: React.FC = () => {
     },
     {
       title: '数量',
-      dataIndex: 'amount',
+      dataIndex: 'generateCount',
       editable: () => true,
     },
     {
       title: '留种时间',
-      dataIndex: 'saveTime',
+      dataIndex: 'createTime',
       valueType: 'dateTime',
       editable: () => true,
     },
@@ -195,10 +267,10 @@ const TestRecords: React.FC = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      render: (_, record) => [
+      render: (_, record, __, action) => [
         <a
           key="edit"
-          onClick={() => setEditableKeys([record.id])}
+          onClick={() => action?.startEditable?.(record.id)}
         >
           编辑
         </a>,
@@ -234,10 +306,22 @@ const TestRecords: React.FC = () => {
           >
             导出
           </Button>,
+          <Button
+            key="batchDelete"
+            danger
+            onClick={handleBatchDelete}
+            disabled={selectedRowKeys.length === 0}
+          >
+            批量删除
+          </Button>,
         ]}
         dataSource={dataSource}
         columns={columns}
         loading={loading}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys),
+        }}
         editable={{
           type: 'single',
           editableKeys,
@@ -246,6 +330,9 @@ const TestRecords: React.FC = () => {
         }}
         pagination={{
           pageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条记录`,
         }}
       />
     </PageContainer>

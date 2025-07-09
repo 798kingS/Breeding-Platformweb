@@ -3,7 +3,7 @@ import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { useRef, useState, useEffect } from 'react';
 import { Button, message, Modal } from 'antd';
-import { history, useLocation } from '@umijs/max';
+import { useLocation } from '@umijs/max';
 import { DeleteOutlined } from '@ant-design/icons';
 
 interface LocationState {
@@ -11,25 +11,6 @@ interface LocationState {
 }
 
 type SowingRecord = {
-  key: number;
-  // 引种记录字段
-  code: string;           // 编号
-  varietyName: string;          // 引种名称
-  method: string;       // 引种方式
-  type: string;         // 品种类型
-  isRegular: string;    // 是否常规
-  generation: string;   // 世代
-  introductionTime: string; // 引种时间
-  // 播种记录字段
-  plantingCode: string;    // 种植编号
-  sowingAmount: number;   // 播种数量
-  planCode: string;      // 计划编号
-  sowingTime: string;    // 播种时间
-  status: string;        // 状态：未生成考种记录/已生成考种记录
-};
-
-// 考种记录类型定义
-type TestRecord = {
   key: number;
   // 引种记录字段
   code: string;           // 编号
@@ -44,34 +25,43 @@ type TestRecord = {
   sowingAmount: number;   // 播种数量
   planCode: string;      // 计划编号
   sowingTime: string;    // 播种时间
-  // 考种记录字段
-  testTime: string;      // 考种时间
+  status: string;        // 状态：未生成考种记录/已生成考种记录
 };
 
 const SowingList: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const location = useLocation();
   const [dataSource, setDataSource] = useState<SowingRecord[]>([]);
+  const [filteredData, setFilteredData] = useState<SowingRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
+  
+  const fetchSowingRecords = async () => {
+    try {
+      const response = await fetch('/api/introduction/getIntroductionSow');
+      if (!response.ok) throw new Error('网络错误');
+      const result = await response.json();
+      console.log('获取播种记录:', result);
+      if (Array.isArray(result.data)) {
+        // 保证每条数据的key唯一
+        const withKey = result.data.map((item: any, idx: number) => ({
+          ...item,
+          key: item.key ?? item.id ?? (item.plantingCode + '_' + item.code + '_' + idx),
+        }));
+        setDataSource(withKey);
+        setFilteredData(withKey);
+      } else {
+        setDataSource([]);
+        setFilteredData([]);
+      }
+    } catch (error) {
+      message.error('获取播种记录失败');
+      setDataSource([]);
+      setFilteredData([]);
+    }
+  };
   // 页面加载时从后端获取播种记录
   useEffect(() => {
-    const fetchSowingRecords = async () => {
-      try {
-        const response = await fetch('/api/introduction/getIntroductionSow');
-        if (!response.ok) throw new Error('网络错误');
-        const result = await response.json();
-        if (Array.isArray(result.data)) {
-          console.log('获取到的播种记录:', result.data);
-          setDataSource(result.data);
-        } else {
-          setDataSource([]);
-        }
-      } catch (error) {
-        message.error('获取播种记录失败');
-        setDataSource([]);
-      }
-    };
     fetchSowingRecords();
   }, []);
 
@@ -89,6 +79,24 @@ const SowingList: React.FC = () => {
     localStorage.setItem('sowingRecords', JSON.stringify(dataSource));
   }, [dataSource]);
 
+  // 实时查询：监听ProTable表单变化，实时过滤
+  const handleValuesChange = (_: any, all: any) => {
+    let result = dataSource;
+    if (all.plantingCode) result = result.filter(item => (item.plantingCode ?? '').toString().includes(all.plantingCode));
+    if (all.code) result = result.filter(item => (item.code ?? '').toString().includes(all.code));
+    if (all.name) result = result.filter(item => (item.name ?? '').toString().includes(all.name));
+    if (all.method) result = result.filter(item => (item.method ?? '').toString().includes(all.method));
+    if (all.type) result = result.filter(item => (item.type ?? '').toString().includes(all.type));
+    if (all.isRegular) result = result.filter(item => (item.isRegular ?? '').toString().includes(all.isRegular));
+    if (all.generation) result = result.filter(item => (item.generation ?? '').toString().includes(all.generation));
+    if (all.introductionTime) result = result.filter(item => (item.introductionTime ?? '').toString().includes(all.introductionTime));
+    if (all.sowingAmount) result = result.filter(item => String(item.sowingAmount ?? '').includes(all.sowingAmount));
+    if (all.planCode) result = result.filter(item => (item.planCode ?? '').toString().includes(all.planCode));
+    if (all.sowingTime) result = result.filter(item => (item.sowingTime ?? '').toString().includes(all.sowingTime));
+    if (all.status) result = result.filter(item => (item.status ?? '').toString().includes(all.status));
+    setFilteredData(result);
+  };
+
   // 处理单个删除
   const handleDelete = (record: SowingRecord) => {
     Modal.confirm({
@@ -104,6 +112,7 @@ const SowingList: React.FC = () => {
             const newDataSource = dataSource.filter(item => item.plantingCode !== record.plantingCode);
             setDataSource(newDataSource);
             message.success('删除成功');
+            fetchSowingRecords();
           } else {
             message.error(result?.msg || '删除失败');
           }
@@ -115,87 +124,68 @@ const SowingList: React.FC = () => {
   };
 
   // 处理批量删除
-  const handleBatchDelete = () => {
+
+  const handleBatchDelete = async () => {
     if (selectedRowKeys.length === 0) {
       message.warning('请选择要删除的记录');
       return;
     }
+
     Modal.confirm({
-      title: '确认删除',
+      title: '确认批量删除',
       content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
-      onOk: () => {
-        const newDataSource = dataSource.filter(
-          item => !selectedRowKeys.includes(item.key)
-        );
-        setDataSource(newDataSource);
-        setSelectedRowKeys([]);
-        message.success('批量删除成功');
+      okText: '确认',
+      cancelText: '取消',
+      onOk: async () => {
+        // const plantids = JSON.stringify({ plantids: selectedRowKeys })
+        try {
+          const res = await fetch('/api/introduction/BatchDeleteSow', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keys: selectedRowKeys }),
+          });
+          console.log('批量删除请求:', JSON.stringify({ keys: selectedRowKeys }));
+          const result = await res.json();
+          if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+            setDataSource(dataSource.filter(item => !selectedRowKeys.includes(item.plantingCode)));
+            setSelectedRowKeys([]);
+            message.success(`已删除 ${selectedRowKeys.length} 条记录`);
+          } else {
+            message.error(result?.msg || '批量删除失败');
+          }
+        } catch (e) {
+          message.error('批量删除失败，请重试');
+        }
       },
     });
   };
 
-  const handleGenerateTestRecord = (record: SowingRecord) => {
-    // 检查是否已经生成过考种记录
-    if (record.status === 'Success') {
-      message.warning('该记录已生成考种记载表！');
-      return;
-    }
-
-    // 更新状态
-    const newDataSource = dataSource.map(item => {
-      if (item.key === record.key) {
-        return { ...item, status: 'Success' };
+  // 新增：考种按钮处理函数
+  const handleTest = async (record: SowingRecord) => {
+    try {
+      const response = await fetch('/api/introduction/examination', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record),
+      });
+      const result = await response.json();
+      if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+        // 只更新当前行的status，直接用后端返回的status值
+        const newStatus = result.status || (result.data ? '已完成考种' : '未考种');
+        const newDataSource = dataSource.map(item =>
+          item.key === record.key ? { ...item, status: newStatus } : item
+        );
+        setDataSource(newDataSource);
+        setFilteredData(prev => prev.map(item =>
+          item.key === record.key ? { ...item, status: newStatus } : item
+        ));
+        message.success(newStatus === '已完成考种' ? '已完成考种' : '考种记录生成成功');
+      } else {
+        message.error(result?.msg || '考种失败');
       }
-      return item;
-    });
-    setDataSource(newDataSource);
-    localStorage.setItem('sowingRecords', JSON.stringify(newDataSource));
-
-    // 创建考种记录，只包含当前行的信息
-    const testRecord = {
-      key: Date.now(), // 生成新的唯一key
-      // 引种记录字段
-      code: record.code,
-      varietyName: record.varietyName,
-      method: record.method,
-      type: record.type,
-      isRegular: record.isRegular,
-      generation: record.generation,
-      introductionTime: record.introductionTime,
-      // 播种记录字段
-      plantingCode: record.plantingCode,
-      sowingAmount: record.sowingAmount,
-      planCode: record.planCode,
-      sowingTime: record.sowingTime,
-      // 考种记录字段
-      testTime: new Date().toISOString().split('T')[0],
-    };
-    
-    // 保存考种记录到 localStorage
-    const savedTestRecords = localStorage.getItem('testRecords') || '[]';
-    const testRecords = JSON.parse(savedTestRecords);
-    
-    // 检查是否已存在相同种植编号的考种记录
-    const existingRecordIndex = testRecords.findIndex(
-      (item: TestRecord) => item.plantingCode === record.plantingCode
-    );
-    
-    if (existingRecordIndex >= 0) {
-      // 如果已存在，则更新而不是添加
-      testRecords[existingRecordIndex] = testRecord;
-    } else {
-      // 如果不存在，则添加新记录
-      testRecords.push(testRecord);
+    } catch (e) {
+      message.error('考种失败，请重试');
     }
-    
-    localStorage.setItem('testRecords', JSON.stringify(testRecords));
-    
-    // 跳转到考种记录页面，并传递新生成的考种记录
-    history.push('/introduction/test', { 
-      testRecord,
-      isNewRecord: true // 添加标记，表示这是一个新生成的记录
-    });
-    message.success('考种记载表生成成功！');
   };
 
   const columns: ProColumns<SowingRecord>[] = [
@@ -205,11 +195,11 @@ const SowingList: React.FC = () => {
     },
     {
       title: '编号',
-      dataIndex: 'code',
+      dataIndex: 'plancode',
     },
     {
       title: '品种名称',
-      dataIndex: 'varietyName',
+      dataIndex: 'name',
     },
     {
       title: '引种方式',
@@ -237,35 +227,30 @@ const SowingList: React.FC = () => {
       dataIndex: 'sowingAmount',
     },
     {
-      title: '计划编号',
-      dataIndex: 'planCode',
-    },
-    {
-      title: '播种时间',
-      dataIndex: 'sowingTime',
-      valueType: 'date',
-    },
-    {
       title: '状态',
       dataIndex: 'status',
-      valueEnum: {
-        '未生成考种记录': { text: '未生成考种记录', status: 'Default' },
-        'Success': { text: '已生成考种记录', status: 'Success' },
+      render: (_, record) => {
+        if (record.status === '已生成考种') {
+          return <span style={{ color: 'red' }}>已生成考种</span>;
+        }
+        if (record.status === '已完成考种' || record.status === '已生成考种记录' || record.status === '已生成考种') {
+          return <span style={{ color: 'green' }}>种子已考种</span>;
+        }
+        return <span style={{ color: 'red' }}>未考种</span>;
       },
     },
     {
       title: '操作',
       valueType: 'option',
       render: (_, record) => [
-        record.status === '未生成考种记录' && (
-          <Button
-            key="generate"
-            type="link"
-            onClick={() => handleGenerateTestRecord(record)}
-          >
-            生成考种记载表
-          </Button>
-        ),
+        <Button
+          key="test"
+          type="link"
+          disabled={record.status === '已完成考种' || record.status === '已生成考种记录' || record.status === '已生成考种'}
+          onClick={() => handleTest(record)}
+        >
+          {record.status === '已生成考种' ? '已生成考种' : (record.status === '已完成考种' || record.status === '已生成考种记录' ? '种子已考种' : '考种')}
+        </Button>,
         <Button
           key="delete"
           type="link"
@@ -287,6 +272,9 @@ const SowingList: React.FC = () => {
         search={{
           labelWidth: 120,
         }}
+        form={{
+          onValuesChange: handleValuesChange,
+        }}
         toolBarRender={() => [
           <Button
             key="batchDelete"
@@ -302,7 +290,9 @@ const SowingList: React.FC = () => {
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys),
         }}
-        dataSource={dataSource}
+        dataSource={filteredData}
+        // onSubmit={handleSearch} // 已用onValuesChange实时过滤，无需onSubmit
+        onReset={() => setFilteredData(dataSource)}
         columns={columns}
         pagination={{
           showQuickJumper: true,

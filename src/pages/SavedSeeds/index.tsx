@@ -126,7 +126,7 @@ const SavedSeeds: React.FC = () => {
     });
   };
 
-  const handleBatchDelete = () => {
+  const handleBatchDelete = async () => {
     if (selectedRowKeys.length === 0) {
       message.warning('请选择要删除的记录');
       return;
@@ -137,12 +137,26 @@ const SavedSeeds: React.FC = () => {
       content: `确定要删除选中的 ${selectedRowKeys.length} 条记录吗？`,
       okText: '确认',
       cancelText: '取消',
-      onOk: () => {
-        const newList = savedSeedList.filter(item => !selectedRowKeys.includes(item.key));
-        setSavedSeedList(newList);
-        localStorage.setItem('savedSeeds', JSON.stringify(newList));
-        setSelectedRowKeys([]);
-        message.success(`已删除 ${selectedRowKeys.length} 条记录`);
+      onOk: async () => {
+        // const plantids = JSON.stringify({ plantids: selectedRowKeys })
+        try {
+          const res = await fetch('/api/seed/BatchDeleteSeed', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keys: selectedRowKeys }),
+          });
+          console.log('批量删除请求:', JSON.stringify({ plantids: selectedRowKeys }));
+          const result = await res.json();
+          if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
+            setSavedSeedList(savedSeedList.filter(item => !selectedRowKeys.includes(item.key)));
+            setSelectedRowKeys([]);
+            message.success(`已删除 ${selectedRowKeys.length} 条记录`);
+          } else {
+            message.error(result?.msg || '批量删除失败');
+          }
+        } catch (e) {
+          message.error('批量删除失败，请重试');
+        }
       },
     });
   };
@@ -257,6 +271,7 @@ const SavedSeeds: React.FC = () => {
           defaultPageSize: 10,
           showSizeChanger: true,
           showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条记录`,
         }}
       />
     </PageContainer>

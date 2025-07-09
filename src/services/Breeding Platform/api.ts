@@ -261,7 +261,7 @@ export async function deleteSowingRecord(params: {
 export async function batchDeleteSowingRecords(params: {
   ids: string[];
 }, options?: { [key: string]: any }) {
-  return request<Record<string, any>>('/api/seed/sow/batch', {
+  return request<Record<string, any>>('/api/seed/BatchDeleteSow', {
     method: 'DELETE',
     params: {
       ...params,
