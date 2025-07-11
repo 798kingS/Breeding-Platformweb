@@ -183,11 +183,6 @@ const TestList: React.FC = () => {
       dataIndex: 'generation',
     },
     {
-      title: '引种时间',
-      dataIndex: 'introductionTime',
-      valueType: 'date',
-    },
-    {
       title: '播种数量',
       dataIndex: 'sowingAmount',
     },
@@ -196,14 +191,23 @@ const TestList: React.FC = () => {
       dataIndex: 'planCode',
     },
     {
+      title: '引种时间',
+      dataIndex: 'introductionTime',
+      valueType: 'date',
+      editable: false,
+    },
+    {
       title: '播种时间',
       dataIndex: 'sowingTime',
       valueType: 'date',
+      render: (_: any, record: TestRecord) => record.sowingTime ? <span>{new Date(record.sowingTime).toLocaleString()}</span> : <span>-</span>,
+      editable: false,
     },
     {
       title: '考种时间',
       dataIndex: 'testTime',
-      valueType: 'date',
+      render: (_: any, record: TestRecord) => record.testTime ? <span>{new Date(record.testTime).toLocaleString()}</span> : <span>-</span>,
+      editable: false,
     },
     {
       title: '发芽率(%)',

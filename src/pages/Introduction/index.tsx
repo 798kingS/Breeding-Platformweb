@@ -17,7 +17,7 @@ type IntroductionRecord = {
   generation: string;  // 世代
   introductionTime: string;
   plantingCode: string; // 种植编号
-  // 引种时间
+  sowingTime: string;// 引种时间
 };
 
 const IntroductionList: React.FC = () => {
@@ -215,7 +215,7 @@ const IntroductionList: React.FC = () => {
          },
         body: JSON.stringify(record),
       });
-      // console.log('转入自交系纯化请求:', record);
+      console.log('转入自交系纯化请求:', JSON.stringify(record));
       if (response.ok) {
         message.success('转入自交系纯化成功');
       } else {

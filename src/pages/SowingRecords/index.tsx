@@ -1,9 +1,10 @@
 // 种质资源管理/播种计划表
-import { PageContainer } from '@ant-design/pro-components';
-import { Button, Table, message, Modal } from 'antd';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { Button, message, Modal } from 'antd';
 import { ExportOutlined, DeleteOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
-import { deleteSowingRecord, batchDeleteSowingRecords } from '@/services/Breeding Platform/api';
+import { deleteSowingRecord } from '@/services/Breeding Platform/api';
+import * as dayjs from 'dayjs';
 
 interface SowingRecord {
   key: string;
@@ -18,6 +19,7 @@ interface SowingRecord {
 const SowingRecords: React.FC = () => {
   const [sowingList, setSowingList] = useState<SowingRecord[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [filteredList, setFilteredList] = useState<SowingRecord[]>([]);
   const token = localStorage.getItem('token');
   // 加载数据的函数
   const loadSowingRecords = async () => {
@@ -51,6 +53,26 @@ const SowingRecords: React.FC = () => {
     loadSowingRecords();
   }, []);
 
+  useEffect(() => {
+    setFilteredList(sowingList);
+  }, [sowingList]);
+
+  // 实时过滤逻辑
+  const handleFormChange = (_: any, all: any) => {
+    let data = sowingList;
+    Object.entries(all).forEach(([key, value]) => {
+      if (!value) return;
+      if (key === 'createTime') {
+        if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
+          data = data.filter(item => (item as any)[key] && dayjs.default((item as any)[key]).format('YYYY-MM-DD').includes(dayjs.default(value).format('YYYY-MM-DD')));
+        }
+      } else {
+        data = data.filter(item => ((item as any)[key] ?? '').toString().includes(value));
+      }
+    });
+    setFilteredList(data);
+  };
+
   const handleExport = () => {
     if (sowingList.length === 0) {
       message.warning('暂无播种记录');
@@ -64,7 +86,7 @@ const SowingRecords: React.FC = () => {
       '品种名称',
       '播种数量',
       '计划编号',
-      '创建时间'
+      '播种时间'
     ];
 
     const csvContent = [
@@ -75,7 +97,7 @@ const SowingRecords: React.FC = () => {
         item.varietyName,
         item.sowingCount,
         item.planNumber,
-        item.createTime
+        item.createTime ? '\t' + dayjs.default(item.createTime).format('YYYY-MM-DD HH:mm:ss') : ''
       ].join(','))
     ].join('\n');
 
@@ -156,41 +178,46 @@ const SowingRecords: React.FC = () => {
   const columns = [
     {
       title: '种植编号',
-      dataIndex: 'key',
+      dataIndex: 'code',
       valueType: 'text',
-      width: 80,
-      search: false,
-      render: (text: any, SowingRecord: any) => SowingRecord.code,
-      sorter: (a: any, b: any) => (a.key || 0) - (b.key || 0),
+      fieldProps: { placeholder: '请输入种植编号' },
+      sorter: (a: any, b: any) => (a.code || '').localeCompare(b.code || ''),
     },
-    // {
-    //   title: '种植编号',
-    //   dataIndex: 'plantingCode',
-    // },
     {
       title: '编号',
       dataIndex: 'seedNumber',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入编号' },
     },
     {
       title: '品种名称',
       dataIndex: 'varietyName',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入品种名称' },
     },
     {
       title: '播种数量',
       dataIndex: 'sowingCount',
+      valueType: 'digit',
+      fieldProps: { placeholder: '请输入播种数量' },
     },
     {
       title: '计划编号',
       dataIndex: 'planNumber',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入计划编号' },
     },
     {
-      title: '创建时间',
+      title: '播种时间',
       dataIndex: 'createTime',
-      render: (text: string) => text ? new Date(text).toLocaleString() : '-',
+      valueType: 'dateTime',
+      render: (_: any, record: any) => record.createTime ? dayjs.default(record.createTime).format('YYYY-MM-DD HH:mm:ss') : '-',
+      fieldProps: { placeholder: '请选择播种时间' },
     },
     {
       title: '操作',
       valueType: 'option',
+      hideInSearch: true,
       render: (_: any, record: SowingRecord) => [
         <Button
           key="delete"
@@ -229,14 +256,24 @@ const SowingRecords: React.FC = () => {
           导出
         </Button>
       </div>
-      <Table
+      <ProTable
+        rowKey="key"
+        columns={columns}
+        dataSource={filteredList}
+        search={{
+          labelWidth: 90,
+          defaultCollapsed: true,
+          collapseRender: (collapsed: boolean) => (collapsed ? '展开 ∨' : '收起 ∧'),
+          filterType: 'query',
+        }}
+        form={{
+          syncToUrl: false,
+          onValuesChange: handleFormChange,
+        }}
         rowSelection={{
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys),
         }}
-        dataSource={sowingList}
-        columns={columns}
-        rowKey="key"
         pagination={{
           showQuickJumper: true,
           showSizeChanger: true,
@@ -244,6 +281,8 @@ const SowingRecords: React.FC = () => {
           defaultPageSize: 10,
           showTotal: (total) => `共 ${total} 条记录`,
         }}
+        toolBarRender={false}
+        scroll={{ x: 1200 }}
       />
     </PageContainer>
   );

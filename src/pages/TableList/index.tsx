@@ -18,7 +18,6 @@ import { Button, Drawer, message, Upload, Modal, Table, Space, Input, InputNumbe
 import React, { useRef, useState, useEffect } from 'react';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
-import { request } from '@umijs/max';
 
 // 播种记录类型定义
 export interface SowingRecord {
@@ -385,35 +384,6 @@ const TableList: React.FC = () => {
     </Button>
   ];
 
-  // 更新类型定义，使所有字段可选
-  interface SavedSeedRecord {
-    key?: number;
-    photo?: string;
-    varietyName?: string;
-    type?: string;
-    introductionYear?: string;
-    source?: string;
-    breedingType?: string;
-    seedNumber?: string;
-    plantingYear?: string;
-    resistance?: string;
-    fruitCharacteristics?: string;
-    floweringPeriod?: string;
-    fruitCount?: number;
-    yield?: number;
-    fruitShape?: string;
-    skinColor?: string;
-    fleshColor?: string;
-    singleFruitWeight?: number;
-    fleshThickness?: number;
-    sugarContent?: number;
-    texture?: string;
-    overallTaste?: string;
-    combiningAbility?: string;
-    hybridization?: string;
-    saveTime: string;
-  }
-
   // 更新保存函数
   const handleSaveSeed = async (record: API.RuleListItem) => {
     try {
@@ -443,7 +413,7 @@ const TableList: React.FC = () => {
         overallTaste: record.overallTaste || '',
         combiningAbility: record.combiningAbility || '',
         hybridization: record.hybridization || '',
-        saveTime: new Date().toISOString(),
+        saveTime: record.reserveTime || '',
       };
       const res = await saveSeedRecord(savedRecord);
       console.log('Save seed response:', res);
@@ -485,39 +455,6 @@ const TableList: React.FC = () => {
     } catch (error) {
       hide();
       message.error('批量保存失败，请重试');
-      return false;
-    }
-  };
-
-  /**
-   * 批量播种操作
-   * @param selectedRows 选中的行数据
-   */
-  // 批量播种与后端对接
-  // const token = localStorage.getItem('token');
-  const handleBatchSowing = async (selectedRows: API.RuleListItem[]) => {
-    const hide = message.loading('正在批量播种');
-    if (!selectedRows || selectedRows.length === 0) return true;
-    try {
-      const response = await fetch('/api/seed/Batchseeding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-         },
-        body: JSON.stringify(selectedRows),
-      });
-      console.log('批量播种记录:', JSON.stringify(selectedRows));
-      const result = await response.json();
-      hide();
-      if (result && (result.msg === 'SUCCESS' || result.code === 200)) {
-        message.success('批量播种成功');
-      } else {
-        message.error(result?.msg || '批量播种失败');
-      }
-      return true;
-    } catch (error) {
-      hide();
-      message.error('批量播种失败，请重试');
       return false;
     }
   };
@@ -720,7 +657,12 @@ const TableList: React.FC = () => {
       width: 80,
       search: false,
       render: (text, record) => record.key,
-      sorter: (a, b) => (a.key || 0) - (b.key || 0),
+      sorter: (a, b) => {
+        const aKey = typeof a.key === 'number' ? a.key : parseInt(a.key, 10);
+        const bKey = typeof b.key === 'number' ? b.key : parseInt(b.key, 10);
+        if (!isNaN(aKey) && !isNaN(bKey)) return aKey - bKey;
+        return String(a.key).localeCompare(String(b.key));
+      },
     },
     {
       title: '品种名称',

@@ -27,6 +27,7 @@ type SowingRecord = {
   sowingTime: string;    // 播种时间
   status: string;        // 状态：未生成考种记录/已生成考种记录
   state?: number;        // 新增：考种状态 1-已考种 0-未考种
+  sowTime: string; // 播种时间
 };
 
 const SowingList: React.FC = () => {
@@ -276,6 +277,11 @@ const SowingList: React.FC = () => {
     {
       title: '播种数量',
       dataIndex: 'sowingAmount',
+    },
+    {
+      title: '播种时间',
+      dataIndex: 'sowTime',
+      render: (text: string) => text ? new Date(text).toLocaleString() : '-',
     },
     {
       title: '状态',

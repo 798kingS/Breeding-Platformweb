@@ -70,6 +70,7 @@ declare namespace API {
     overallTaste: string;
     combiningAbility: string;
     hybridization: string;
+    reserveTime: string;
     // parentMale?: string;
     // parentFemale?: string;
   };

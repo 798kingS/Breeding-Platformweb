@@ -1,12 +1,12 @@
-import { PageContainer } from '@ant-design/pro-components';
-import { Button, Table, message, Input, Modal, Space } from 'antd';
-import { ExportOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { Button, message, Modal, Space } from 'antd';
+import { ExportOutlined, DeleteOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
-
+import dayjs from 'dayjs';
 const PurificationSavedSeeds: React.FC = () => {
   const [savedSeedList, setSavedSeedList] = useState<any[]>([]);
-  const [searchText, setSearchText] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [filteredList, setFilteredList] = useState<any[]>([]);
 
   // 页面加载时从后端获取自交系纯化留种记录
   const token = localStorage.getItem('token');
@@ -39,6 +39,26 @@ const PurificationSavedSeeds: React.FC = () => {
     fetchSavedRecords();
   }, []);
 
+  useEffect(() => {
+    setFilteredList(savedSeedList);
+  }, [savedSeedList]);
+
+  // 实时过滤逻辑
+  const handleFormChange = (_: any, all: any) => {
+    let data = savedSeedList;
+    Object.entries(all).forEach(([key, value]) => {
+      if (!value) return;
+      if (key === 'saveTime') {
+        if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
+          data = data.filter(item => item[key] && dayjs(item[key]).format('YYYY-MM-DD').includes(dayjs(value).format('YYYY-MM-DD')));
+        }
+      } else {
+        data = data.filter(item => (item[key] ?? '').toString().includes(value));
+      }
+    });
+    setFilteredList(data);
+  };
+
   const handleExport = () => {
     if (savedSeedList.length === 0) {
       message.warning('暂无留种记录');
@@ -70,7 +90,7 @@ const PurificationSavedSeeds: React.FC = () => {
         item.isRegular || '',
         item.generation || '',
         item.amount || '',
-        item.saveTime || '',
+        item.saveTime ? '\t' + dayjs.default(item.reserveTime).format('YYYY-MM-DD HH:mm:ss') : '',
         item.source || ''
       ].join(','))
     ].join('\n');
@@ -154,55 +174,73 @@ const PurificationSavedSeeds: React.FC = () => {
     });
   };
 
-  const handleSearch = (value: string) => {
-    setSearchText(value);
-  };
-
-  const filteredList = savedSeedList.filter(item =>
-    (item.name?.includes(searchText) || false) ||
-    (item.code?.includes(searchText) || false)
-  );
-
   const columns = [
     {
       title: '系谱编号',
       dataIndex: 'plantingCode',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入系谱编号' },
     },
     {
       title: '编号',
       dataIndex: 'code',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入编号' },
     },
     {
       title: '品种名称',
       dataIndex: 'varietyName',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入品种名称' },
     },
     {
       title: '引种方式',
       dataIndex: 'method',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入引种方式' },
     },
     {
       title: '品种类型',
       dataIndex: 'type',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入品种类型' },
     },
     {
       title: '是否常规',
       dataIndex: 'isRegular',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入是否常规' },
     },
     {
       title: '世代',
       dataIndex: 'generation',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入世代' },
     },
     {
       title: '数量',
       dataIndex: 'amount',
+      valueType: 'digit',
+      fieldProps: { placeholder: '请输入数量' },
     },
     {
       title: '留种时间',
       dataIndex: 'saveTime',
+      valueType: 'dateTime',
+      render: (_: any, record: any) => record.saveTime ? dayjs(record.saveTime).format('YYYY-MM-DD HH:mm:ss') : '-',
+      fieldProps: { placeholder: '请选择留种时间' },
+    },
+    {
+      title: '来源',
+      dataIndex: 'source',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入来源' },
     },
     {
       title: '操作',
       dataIndex: 'operation',
+      valueType: 'option',
+      hideInSearch: true,
       render: (_: any, record: any) => (
         <Button
           type="link"
@@ -231,25 +269,19 @@ const PurificationSavedSeeds: React.FC = () => {
         title: '留种记录',
         extra: [
           <Space key="actions">
-            <Input
-              placeholder="搜索品种名称或编号"
-              prefix={<SearchOutlined />}
-              onChange={e => handleSearch(e.target.value)}
-              style={{ width: 200 }}
-            />
-            {selectedRowKeys.length > 0 && (
-              <Button
-                danger
-                icon={<DeleteOutlined />}
-                onClick={handleBatchDelete}
-              >
-                批量删除 ({selectedRowKeys.length})
-              </Button>
-            )}
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={handleBatchDelete}
+              disabled={selectedRowKeys.length === 0}
+            >
+              批量删除 ({selectedRowKeys.length})
+            </Button>
             <Button
               type="primary"
               icon={<ExportOutlined />}
               onClick={handleExport}
+              disabled={savedSeedList.length === 0}
             >
               导出记录
             </Button>
@@ -257,17 +289,28 @@ const PurificationSavedSeeds: React.FC = () => {
         ],
       }}
     >
-      <Table
-        rowSelection={rowSelection}
+      <ProTable
+        rowKey="plantingCode"
         columns={columns}
         dataSource={filteredList}
-        rowKey="plantingCode"
-        scroll={{ x: 2000 }}
+        search={{
+          labelWidth: 90,
+          defaultCollapsed: true,
+          collapseRender: (collapsed: boolean) => (collapsed ? '展开 ∨' : '收起 ∧'),
+          filterType: 'query',
+        }}
+        form={{
+          syncToUrl: false,
+          onValuesChange: handleFormChange,
+        }}
+        rowSelection={rowSelection}
         pagination={{
           defaultPageSize: 10,
           showSizeChanger: true,
           showQuickJumper: true,
         }}
+        toolBarRender={false}
+        scroll={{ x: 2000 }}
       />
     </PageContainer>
   );

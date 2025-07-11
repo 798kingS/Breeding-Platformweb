@@ -303,7 +303,7 @@ const SowingList: React.FC = () => {
     // 统一导出字段
     const exportFields = [
       '种植编号', '编号', '品种名称', '引种方式', '品种类型', '是否常规', '世代',
-      '播种数量', '播种时间', '计划编号', '状态', '来源'
+      '播种数量', '播种时间',  '来源'
     ];
 
     // 获取种质资源记录
@@ -311,7 +311,7 @@ const SowingList: React.FC = () => {
     if (sowingRecords) {
       const records = JSON.parse(sowingRecords);
       allRecords.push(...records.map((item: any) => ({
-        '种植编号': item.code || item.plantingCode || '',
+        '系谱编号': item.code || item.plantingCode || '',
         '编号': item.seedNumber || item.code || '',
         '品种名称': item.varietyName || item.name || '',
         '引种方式': item.method || '',
@@ -320,9 +320,8 @@ const SowingList: React.FC = () => {
         '世代': item.generation || '',
         '播种数量': item.sowingCount || item.sowingAmount || '',
         '播种时间': item.sowingTime || item.createTime || '',
-        '计划编号': item.planNumber || item.planCode || '',
-        '状态': item.status || '',
-        '来源': '种质资源'
+        '来源': '种质资源',
+        '创建时间': item.sowingTime || ''
       }) as ExportRow));
       allRecords.push({} as ExportRow);
     }
@@ -332,8 +331,8 @@ const SowingList: React.FC = () => {
     if (introductionSowingRecords) {
       const records = JSON.parse(introductionSowingRecords);
       allRecords.push(...records.map((item: any) => ({
-        '种植编号': item.code || item.plantingCode || '',
-        '编号': item.seedNumber || item.code || '',
+        '种植编号': item.plantingCode || '',
+        '编号':  item.plancode || '',
         '品种名称': item.varietyName || item.name || '',
         '引种方式': item.method || '',
         '品种类型': item.type || '',

@@ -5,12 +5,14 @@ import { ProTable } from '@ant-design/pro-components';
 import { Button, message, Modal } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
 import React, { useRef, useState, useEffect } from 'react';
+import dayjs from 'dayjs';
 
 const TestRecords: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [dataSource, setDataSource] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
+  const [filteredList, setFilteredList] = useState<any[]>([]);
 
   const token = localStorage.getItem('token');
 
@@ -47,6 +49,26 @@ const TestRecords: React.FC = () => {
     };
     fetchTestRecords();
   }, []);
+
+  useEffect(() => {
+    setFilteredList(dataSource);
+  }, [dataSource]);
+
+  // 实时过滤逻辑
+  const handleFormChange = (_: any, all: any) => {
+    let data = dataSource;
+    Object.entries(all).forEach(([key, value]) => {
+      if (!value) return;
+      if (key === 'createTime') {
+        if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
+          data = data.filter(item => item[key] && dayjs(item[key]).format('YYYY-MM-DD').includes(dayjs(value).format('YYYY-MM-DD')));
+        }
+      } else {
+        data = data.filter(item => (item[key] ?? '').toString().includes(value));
+      }
+    });
+    setFilteredList(data);
+  };
 
   // 保存编辑后的数据
   const handleSave = async (row: any) => {
@@ -178,85 +200,49 @@ const TestRecords: React.FC = () => {
     }
   };
 
-  // 处理导出
-  const handleExport = () => {
-    if (dataSource.length === 0) {
-      message.warning('暂无数据可导出');
-      return;
-    }
-
-    const headers = [
-      '种植编号',
-      '编号',
-      '品种名称',
-      '引种方式',
-      '品种类型',
-      '是否常规',
-      '世代',
-      '数量',
-      '留种时间',
-      '来源'
-    ];
-
-    const csvContent = [
-      headers.join(','),
-      ...dataSource.map(record => [
-        record.plantingcode,
-        record.code,
-        record.varietyName,
-        record.method,
-        record.type,
-        record.isRegular ? '是' : '否',
-        record.generation,
-        record.generateCount,
-        record.createTime,
-        record.source
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute('href', url);
-    link.setAttribute('download', '考种记载表.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const columns: ProColumns<any>[] = [
     {
       title: '系谱编号',
       dataIndex: 'plantingCode',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入系谱编号' },
       copyable: true,
       editable: () => true,
     },
     {
       title: '编号',
       dataIndex: 'code',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入编号' },
       copyable: true,
       editable: () => true,
     },
     {
       title: '品种名称',
       dataIndex: 'varietyName',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入品种名称' },
       editable: () => true,
     },
     {
       title: '引种方式',
       dataIndex: 'method',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入引种方式' },
       editable: () => true,
     },
     {
       title: '品种类型',
       dataIndex: 'type',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入品种类型' },
       editable: () => true,
     },
     {
       title: '是否常规',
       dataIndex: 'isRegular',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入是否常规' },
       valueEnum: {
         true: { text: '是', status: 'Success' },
         false: { text: '否', status: 'Error' },
@@ -266,28 +252,37 @@ const TestRecords: React.FC = () => {
     {
       title: '世代',
       dataIndex: 'generation',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入世代' },
       editable: () => true,
     },
     {
       title: '数量',
       dataIndex: 'generateCount',
+      valueType: 'digit',
+      fieldProps: { placeholder: '请输入数量' },
       editable: () => true,
     },
     {
-      title: '留种时间',
+      title: '考种时间',
       dataIndex: 'createTime',
       valueType: 'dateTime',
+      render: (_: any, record: any) => record.createTime ? dayjs(record.createTime).format('YYYY-MM-DD HH:mm:ss') : '-',
+      fieldProps: { placeholder: '请选择考种时间' },
       editable: () => true,
     },
     {
       title: '来源',
       dataIndex: 'source',
+      valueType: 'text',
+      fieldProps: { placeholder: '请输入来源' },
       editable: () => true,
     },
     {
       title: '操作',
       valueType: 'option',
       key: 'option',
+      hideInSearch: true,
       render: (_, record, __, action) => [
         <a
           key="edit"
@@ -311,13 +306,53 @@ const TestRecords: React.FC = () => {
     },
   ];
 
+  // 处理导出
+  const handleExport = () => {
+    if (dataSource.length === 0) {
+      message.warning('暂无数据可导出');
+      return;
+    }
+    // 自动获取所有表格字段
+    const allFields = columns
+      .filter(col => col.dataIndex && col.dataIndex !== 'option')
+      .map(col => col.dataIndex as string);
+    const headers = columns
+      .filter(col => col.dataIndex && col.dataIndex !== 'option')
+      .map(col => col.title as string);
+    const csvContent = [
+      headers.join(','),
+      ...dataSource.map(record =>
+        allFields.map(field => record[field] ?? '').join(',')
+      )
+    ].join('\n');
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', '考种记载表.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <PageContainer>
       <ProTable<any>
         headerTitle="考种记载表"
         actionRef={actionRef}
         rowKey="id"
-        search={false}
+        dataSource={filteredList}
+        search={{
+          labelWidth: 90,
+          defaultCollapsed: true,
+          collapseRender: (collapsed: boolean) => (collapsed ? '展开 ∨' : '收起 ∧'),
+          filterType: 'query',
+        }}
+        form={{
+          syncToUrl: false,
+          onValuesChange: handleFormChange,
+        }}
         toolBarRender={() => [
           <Button
             key="export"
@@ -336,7 +371,6 @@ const TestRecords: React.FC = () => {
             批量删除
           </Button>,
         ]}
-        dataSource={dataSource}
         columns={columns}
         loading={loading}
         rowSelection={{

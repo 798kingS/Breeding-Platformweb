@@ -328,7 +328,7 @@ const PurificationList: React.FC = () => {
     // },
     {
       title: '引种时间',
-      dataIndex: 'sowingTime',
+      dataIndex: 'introductionTime',
       valueType: 'date',
       hideInTable: false,
       hideInSearch: false,
