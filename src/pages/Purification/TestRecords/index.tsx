@@ -208,8 +208,8 @@ const TestRecords: React.FC = () => {
         record.type,
         record.isRegular ? '是' : '否',
         record.generation,
-        record.amount,
-        record.saveTime,
+        record.generateCount,
+        record.createTime,
         record.source
       ].join(','))
     ].join('\n');

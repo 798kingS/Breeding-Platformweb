@@ -296,24 +296,35 @@ const SowingList: React.FC = () => {
   };
 
   // 处理导出所有记录
+  type ExportRow = { [key: string]: any };
   const handleExportAllRecords = () => {
-    const allRecords: any[] = [];
+    const allRecords: ExportRow[] = [];
+
+    // 统一导出字段
+    const exportFields = [
+      '种植编号', '编号', '品种名称', '引种方式', '品种类型', '是否常规', '世代',
+      '播种数量', '播种时间', '计划编号', '状态', '来源'
+    ];
 
     // 获取种质资源记录
     const sowingRecords = localStorage.getItem('sowingRecords');
     if (sowingRecords) {
       const records = JSON.parse(sowingRecords);
       allRecords.push(...records.map((item: any) => ({
-        '种植编号': item.code,
-        '编号': item.seedNumber,
-        '品种名称': item.varietyName,
-        '播种数量': item.sowingCount,
-        '计划编号': item.planNumber,
-        '创建时间': item.createTime,
+        '种植编号': item.code || item.plantingCode || '',
+        '编号': item.seedNumber || item.code || '',
+        '品种名称': item.varietyName || item.name || '',
+        '引种方式': item.method || '',
+        '品种类型': item.type || '',
+        '是否常规': item.isRegular || '',
+        '世代': item.generation || '',
+        '播种数量': item.sowingCount || item.sowingAmount || '',
+        '播种时间': item.sowingTime || item.createTime || '',
+        '计划编号': item.planNumber || item.planCode || '',
+        '状态': item.status || '',
         '来源': '种质资源'
-      })));
-      // 添加空行
-      allRecords.push({});
+      }) as ExportRow));
+      allRecords.push({} as ExportRow);
     }
 
     // 获取引种模块记录
@@ -321,33 +332,37 @@ const SowingList: React.FC = () => {
     if (introductionSowingRecords) {
       const records = JSON.parse(introductionSowingRecords);
       allRecords.push(...records.map((item: any) => ({
-        '种植编号': item.code,
-        '编号': item.seedNumber,
-        '品种名称': item.varietyName,
-        '播种数量': item.sowingCount,
-        '计划编号': item.planNumber,
-        '创建时间': item.createTime,
+        '种植编号': item.code || item.plantingCode || '',
+        '编号': item.seedNumber || item.code || '',
+        '品种名称': item.varietyName || item.name || '',
+        '引种方式': item.method || '',
+        '品种类型': item.type || '',
+        '是否常规': item.isRegular || '',
+        '世代': item.generation || '',
+        '播种数量': item.sowingCount || item.sowingAmount || '',
+        '播种时间': item.sowingTime || item.createTime || '',
+        '计划编号': item.planNumber || item.planCode || '',
+        '状态': item.status || '',
         '来源': '引种模块'
-      })));
-      // 添加空行
-      allRecords.push({});
+      }) as ExportRow));
+      allRecords.push({} as ExportRow);
     }
 
     // 获取自交系纯化记录
     allRecords.push(...dataSource.map(item => ({
-      '系谱编号': item.plantingCode,
-      '编号': item.code,
-      '品种名称': item.varietyName,
-      '引种方式': item.method,
-      '品种类型': item.type,
-      '是否常规': item.isRegular,
-      '世代': item.generation,
-      '播种数量': item.sowingAmount,
-      '播种时间': item.sowingTime,
-      '计划编号': item.planCode,
-      '状态': item.status,
+      '种植编号': item.plantingCode || item.plantingcode || '',
+      '编号': item.code || '',
+      '品种名称': item.varietyName || item.name || '',
+      '引种方式': item.method || '',
+      '品种类型': item.type || '',
+      '是否常规': item.isRegular || '',
+      '世代': item.generation || '',
+      '播种数量': item.sowingAmount || '',
+      '播种时间': item.sowingTime || '',
+      '计划编号': item.planCode || '',
+      '状态': item.status || '',
       '来源': '自交系纯化'
-    })));
+    }) as ExportRow));
 
     if (allRecords.length === 0) {
       message.warning('没有数据可导出');
@@ -356,60 +371,12 @@ const SowingList: React.FC = () => {
 
     // 创建工作簿
     const wb = XLSX.utils.book_new();
-    
     // 创建工作表
-    const ws = XLSX.utils.json_to_sheet(allRecords);
+    const ws = XLSX.utils.json_to_sheet(allRecords, { header: exportFields });
 
     // 设置列宽
-    const colWidths = [
-      { wch: 15 }, // 种植编号
-      { wch: 15 }, // 编号
-      { wch: 20 }, // 品种名称
-      { wch: 10 }, // 播种数量
-      { wch: 15 }, // 计划编号
-      { wch: 20 }, // 创建时间
-      { wch: 10 }, // 来源
-    ];
+    const colWidths = exportFields.map(() => ({ wch: 15 }));
     ws['!cols'] = colWidths;
-
-    // 设置单元格样式
-    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    let currentSource = '';
-    let startRow = 1; // 从1开始，因为0是表头
-
-    // 遍历所有行
-    for (let R = range.s.r; R <= range.e.r; R++) {
-      const cell = ws[XLSX.utils.encode_cell({ r: R, c: 6 })]; // 来源列
-      if (cell && cell.v) {
-        if (cell.v !== currentSource) {
-          // 设置新来源的标题行样式
-          const titleCell = ws[XLSX.utils.encode_cell({ r: R, c: 0 })];
-          if (titleCell) {
-            titleCell.s = {
-              fill: {
-                fgColor: { rgb: getSourceColor(cell.v) }
-              },
-              font: {
-                bold: true,
-                color: { rgb: 'FFFFFF' }
-              }
-            };
-          }
-          currentSource = cell.v;
-        }
-        // 设置数据行样式
-        for (let C = range.s.c; C <= range.e.c; C++) {
-          const dataCell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
-          if (dataCell) {
-            dataCell.s = {
-              fill: {
-                fgColor: { rgb: getSourceColor(cell.v) }
-              }
-            };
-          }
-        }
-      }
-    }
 
     // 添加工作表到工作簿
     XLSX.utils.book_append_sheet(wb, ws, '全部记录');
@@ -430,6 +397,8 @@ const SowingList: React.FC = () => {
   };
 
   // 处理全部导出
+  let sowingRecords;
+  let introductionSowingRecords;
   const handleExportAll = (module: string) => {
     if (module === '全部') {
       handleExportAllRecords();
@@ -441,11 +410,11 @@ const SowingList: React.FC = () => {
 
     switch (module) {
       case '种质资源':
-        const sowingRecords = localStorage.getItem('sowingRecords');
+        sowingRecords = localStorage.getItem('sowingRecords');
         if (sowingRecords) {
           const records = JSON.parse(sowingRecords);
           exportData = records.map((item: any) => ({
-            '种植编号': item.code,
+            '种植编号': item.id,
             '编号': item.code,
             '品种名称': item.varietyName,
             '播种数量': item.sowingCount,
@@ -457,7 +426,7 @@ const SowingList: React.FC = () => {
         fileName = '种质资源记录';
         break;
       case '引种模块':
-        const introductionSowingRecords = localStorage.getItem('sowingRecords');
+        introductionSowingRecords = localStorage.getItem('sowingRecords');
         if (introductionSowingRecords) {
           const records = JSON.parse(introductionSowingRecords);
           exportData = records.map((item: any) => ({
@@ -500,9 +469,9 @@ const SowingList: React.FC = () => {
     const headers = Object.keys(exportData[0]);
     const csvContent = [
       headers.join(','),
-      ...exportData.map(row => 
+      ...exportData.map((row) =>
         headers.map(header => {
-          const value = row[header];
+          const value = (row as ExportRow)[header];
           return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
         }).join(',')
       )
@@ -520,20 +489,6 @@ const SowingList: React.FC = () => {
     URL.revokeObjectURL(url);
     
     message.success('导出成功');
-  };
-
-  // 获取不同来源的颜色
-  const getSourceColor = (source: string): string => {
-    switch (source) {
-      case '种质资源':
-        return 'FFB6C1'; // 浅粉色
-      case '引种模块':
-        return '98FB98'; // 浅绿色
-      case '自交系纯化':
-        return '87CEEB'; // 浅蓝色
-      default:
-        return 'FFFFFF'; // 白色
-    }
   };
 
   // 创建导出菜单

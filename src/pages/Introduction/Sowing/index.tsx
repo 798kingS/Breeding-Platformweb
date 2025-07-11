@@ -26,6 +26,7 @@ type SowingRecord = {
   planCode: string;      // 计划编号
   sowingTime: string;    // 播种时间
   status: string;        // 状态：未生成考种记录/已生成考种记录
+  state?: number;        // 新增：考种状态 1-已考种 0-未考种
 };
 
 const SowingList: React.FC = () => {
@@ -220,7 +221,7 @@ const SowingList: React.FC = () => {
       const result = await response.json();
       if (result && (result.success || result.code === 200 || result.msg === 'SUCCESS')) {
         // 只更新当前行的status，直接用后端返回的status值
-        const newStatus = result.status || (result.data ? '已完成考种' : '已考种');
+        const newStatus = result.data.state ? '未考种' : '已考种';
         const newDataSource = dataSource.map(item =>
           item.key === record.key ? { ...item, status: newStatus } : item
         );
@@ -228,7 +229,8 @@ const SowingList: React.FC = () => {
         setFilteredData(prev => prev.map(item =>
           item.key === record.key ? { ...item, status: newStatus } : item
         ));
-        message.success(newStatus === '已完成考种' ? '已完成考种' : '考种记录生成成功');
+        await fetchSowingRecords();
+        message.success(newStatus === '已考种' ? '已完成考种' : '考种记录生成成功');
       } else {
         message.error(result?.msg || '考种失败');
       }
@@ -277,15 +279,15 @@ const SowingList: React.FC = () => {
     },
     {
       title: '状态',
-      dataIndex: 'status',
+      dataIndex: 'state',
       render: (_, record) => {
-        if (record.status === '已生成考种') {
-          return <span style={{ color: 'red' }}>已生成考种</span>;
+        if (record.state === 1) {
+          return <span style={{ color: 'green' }}>已考种</span>;
         }
-        if (record.status === '已完成考种' || record.status === '已生成考种记录' || record.status === '已生成考种') {
-          return <span style={{ color: 'green' }}>种子已考种</span>;
+        if (record.state === 0) {
+          return <span style={{ color: 'red' }}>未考种</span>;
         }
-        return <span style={{ color: 'red' }}>已考种</span>;
+        return <span>-</span>;
       },
     },
     {
@@ -334,14 +336,14 @@ const SowingList: React.FC = () => {
           >
             批量删除
           </Button>,
-          <Button
-            key="batchSowing"
-            type="primary"
-            onClick={handleBatchSowing}
-            disabled={selectedRowKeys.length === 0}
-          >
-            批量播种
-          </Button>,
+          // <Button
+          //   key="batchSowing"
+          //   type="primary"
+          //   onClick={handleBatchSowing}
+          //   disabled={selectedRowKeys.length === 0}
+          // >
+          //   批量播种
+          // </Button>,
         ]}
         rowSelection={{
           selectedRowKeys,

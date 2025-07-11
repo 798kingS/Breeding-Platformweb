@@ -27,6 +27,7 @@ export default [
     name: '欢迎',
     icon: 'smile',
     component: './Welcome',
+
   },
   {
     path: '/admin',
@@ -37,11 +38,13 @@ export default [
       {
         path: '/admin',
         redirect: '/admin/sub-page',
+ 
       },
       {
         path: '/admin/sub-page',
         name: '二级管理页',
         component: './Admin',
+
       },
     ],
   },
@@ -55,18 +58,21 @@ export default [
         icon: 'experiment',
         path: '/germplasm/list',
         component: './TableList',
+
       },
       {
         name: '留种记录',
         icon: 'seedling',
         path: '/germplasm/saved-seeds',
         component: './SavedSeeds',
+
       },
       {
         name: '播种计划表',
         icon: 'fileSearch',
         path: '/germplasm/sowing-records',
         component: './SowingRecords',
+
       },
     ],
   },
@@ -80,18 +86,21 @@ export default [
         icon: 'import',
         path: '/introduction/list',
         component: './Introduction',
+
       },
       {
         name: '播种记录',
         icon: 'seedling',
         path: '/introduction/sowing',
         component: './Introduction/Sowing',
+
       },
       {
         name: '考种记录',
         icon: 'fileSearch',
         path: '/introduction/test',
         component: './Introduction/Test',
+
       },
     ],
   },
@@ -104,21 +113,25 @@ export default [
         name: '自交系纯化',
         path: '/purification/list',
         component: './Purification',
+
       },
       {
         name: '播种计划',
         path: '/purification/sowing',
         component: './Purification/Sowing',
+
       },
       {
         name: '考种记载表',
         path: '/purification/test-records',
         component: './Purification/TestRecords',
+
       },
       {
         name: '留种记录',
         path: '/purification/saved-seeds',
         component: './Purification/SavedRecords',
+
       },
     ],
   },
@@ -132,12 +145,14 @@ export default [
         icon: 'robot',
         path: '/AI/ai-chat',
         component: './AI/AIChat',
+
       },
       {
         name: '问答记录',
         icon: 'HistoryOutlined',
         path: '/AI/chat-history',
         component: './AI/ChatHistory',
+
       },
     ],
   },
@@ -146,10 +161,12 @@ export default [
     icon: 'camera',
     path: '/image-identify',
     component: './ImageIdentify',
+
   },
   {
     path: '/',
     redirect: '/welcome',
+
   },
   {
     path: '*',

@@ -307,6 +307,9 @@ const Login: React.FC = () => {
         type,
       });
 
+      console.log(response);
+
+
       if (response.token) {
         localStorage.setItem('token', response.token);
         localStorage.setItem('userId', response.id?.toString() || '');
