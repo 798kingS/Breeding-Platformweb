@@ -60,14 +60,14 @@ const PurificationSavedSeeds: React.FC = () => {
   };
 
   const handleExport = () => {
-    if (savedSeedList.length === 0) {
+    if (filteredList.length === 0) {
       message.warning('暂无留种记录');
       return;
     }
 
-    // 创建CSV内容
+    // 创建CSV内容，字段顺序与 columns 保持一致
     const headers = [
-      '种植编号',
+      '系谱编号',
       '编号',
       '品种名称',
       '引种方式',
@@ -81,16 +81,16 @@ const PurificationSavedSeeds: React.FC = () => {
 
     const csvContent = [
       headers.join(','),
-      ...savedSeedList.map(item => [
+      ...filteredList.map(item => [
         item.plantingCode || '',
         item.code || '',
-        item.name || '',
+        item.varietyName || '',
         item.method || '',
         item.type || '',
         item.isRegular || '',
         item.generation || '',
         item.amount || '',
-        item.saveTime ? '\t' + dayjs.default(item.reserveTime).format('YYYY-MM-DD HH:mm:ss') : '',
+        item.saveTime ? '\t' + dayjs(item.saveTime).format('YYYY-MM-DD HH:mm:ss') : '',
         item.source || ''
       ].join(','))
     ].join('\n');
@@ -99,7 +99,6 @@ const PurificationSavedSeeds: React.FC = () => {
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
     link.setAttribute('href', url);
     link.setAttribute('download', '留种记录.csv');
     link.style.visibility = 'hidden';
@@ -281,7 +280,7 @@ const PurificationSavedSeeds: React.FC = () => {
               type="primary"
               icon={<ExportOutlined />}
               onClick={handleExport}
-              disabled={savedSeedList.length === 0}
+              disabled={filteredList.length === 0}
             >
               导出记录
             </Button>
